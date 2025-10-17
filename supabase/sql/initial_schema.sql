@@ -80,16 +80,23 @@
  alter table public.settings enable row level security;
 
  -- Policies template per table
- do $$
- declare t text;
- begin
-   for t in select unnest(array['tasks','power_practices','journals','connections','settings']) loop
-     execute format('create policy if not exists %I on public.%I for select using (auth.uid() = user_id);', 'owner_select', t);
-     execute format('create policy if not exists %I on public.%I for insert with check (auth.uid() = user_id);', 'owner_insert', t);
-     execute format('create policy if not exists %I on public.%I for update using (auth.uid() = user_id) with check (auth.uid() = user_id);', 'owner_update', t);
-     execute format('create policy if not exists %I on public.%I for delete using (auth.uid() = user_id);', 'owner_delete', t);
-   end loop;
- end $$;
+do $$
+declare t text;
+begin
+  for t in select unnest(array['tasks','power_practices','journals','connections','settings']) loop
+    -- Drop existing policies if present (CREATE POLICY doesn't support IF NOT EXISTS)
+    execute format('drop policy if exists %I on public.%I;', 'owner_select', t);
+    execute format('drop policy if exists %I on public.%I;', 'owner_insert', t);
+    execute format('drop policy if exists %I on public.%I;', 'owner_update', t);
+    execute format('drop policy if exists %I on public.%I;', 'owner_delete', t);
+
+    -- Recreate policies
+    execute format('create policy %I on public.%I for select using (auth.uid() = user_id);', 'owner_select', t);
+    execute format('create policy %I on public.%I for insert with check (auth.uid() = user_id);', 'owner_insert', t);
+    execute format('create policy %I on public.%I for update using (auth.uid() = user_id) with check (auth.uid() = user_id);', 'owner_update', t);
+    execute format('create policy %I on public.%I for delete using (auth.uid() = user_id);', 'owner_delete', t);
+  end loop;
+end $$;
 
  -- updated_at triggers
  create or replace function public.set_updated_at()
