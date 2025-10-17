@@ -1,0 +1,35 @@
+ name: CI
+
+ on:
+   pull_request:
+   push:
+     branches: [ main ]
+
+ jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies (frozen)
+        run: pnpm install --frozen-lockfile
+
+      # Approving build scripts is interactive in pnpm v10; omit to keep CI non-interactive
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
