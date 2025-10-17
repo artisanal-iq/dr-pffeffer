@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -18,11 +19,13 @@ export const metadata: Metadata = {
   description: "Master presence, purpose, and productivity.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
   return (
     <html lang="en">
       <body
@@ -36,6 +39,13 @@ export default function RootLayout({
             <Link href="/journal" className="hover:underline">Journal</Link>
             <Link href="/connections" className="hover:underline">Connections</Link>
             <Link href="/settings" className="hover:underline ml-auto">Settings</Link>
+            {user ? (
+              <form action="/auth/signout" method="post">
+                <button className="hover:underline" type="submit">Sign out</button>
+              </form>
+            ) : (
+              <Link href="/login" className="hover:underline">Sign in</Link>
+            )}
           </nav>
         </header>
         <div className="mx-auto max-w-5xl px-6">
