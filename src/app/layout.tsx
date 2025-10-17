@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Providers from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,9 +49,11 @@ export default async function RootLayout({
             )}
           </nav>
         </header>
-        <div className="mx-auto max-w-5xl px-6">
-          {children}
-        </div>
+        <Providers>
+          <div className="mx-auto max-w-5xl px-6">
+            {children}
+          </div>
+        </Providers>
       </body>
     </html>
   );
