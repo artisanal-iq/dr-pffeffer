@@ -1,0 +1,58 @@
+ import { pgTable, uuid, text, timestamp, varchar, integer, boolean } from "drizzle-orm/pg-core";
+
+export const tasks = pgTable("tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  title: text("title").notNull(),
+  status: varchar("status", { length: 32 }).notNull(), // todo | in_progress | done
+  priority: varchar("priority", { length: 16 }).notNull(), // low | medium | high
+  scheduledTime: timestamp("scheduled_time", { withTimezone: true }),
+  context: text("context"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const powerPractices = pgTable("power_practices", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  focus: text("focus").notNull(),
+  reflection: text("reflection"),
+  rating: integer("rating"), // 1..5
+  aiFeedback: text("ai_feedback"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const journals = pgTable("journals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  entry: text("entry").notNull(),
+  aiSummary: text("ai_summary"),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const connections = pgTable("connections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  name: text("name").notNull(),
+  org: text("org"),
+  category: text("category"),
+  lastContact: timestamp("last_contact", { withTimezone: true }),
+  nextAction: text("next_action"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const settings = pgTable("settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  theme: varchar("theme", { length: 16 }), // light | dark | system
+  notifications: boolean("notifications").default(true).notNull(),
+  aiPersona: text("ai_persona"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

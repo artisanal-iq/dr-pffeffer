@@ -23,8 +23,7 @@
       - name: Install dependencies (frozen)
         run: pnpm install --frozen-lockfile
 
-      - name: Approve build scripts
-        run: pnpm approve-builds -y
+      # Approving build scripts is interactive in pnpm v10; omit to keep CI non-interactive
 
       - name: Lint
         run: pnpm lint
