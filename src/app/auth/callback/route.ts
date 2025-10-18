@@ -34,6 +34,31 @@ export async function GET(req: Request) {
     });
 
     await supabase.auth.exchangeCodeForSession(code);
+    // Fallback: explicitly set cookies if session exists (belt & suspenders)
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      const s = sessionData.session;
+      // Access token
+      res.cookies.set({
+        name: "sb-access-token",
+        value: s.access_token,
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+      });
+      // Refresh token
+      if (s.refresh_token) {
+        res.cookies.set({
+          name: "sb-refresh-token",
+          value: s.refresh_token,
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          path: "/",
+        });
+      }
+    }
   }
 
   return res;

@@ -22,5 +22,8 @@ export async function POST() {
     },
   });
   await supabase.auth.signOut();
+  // Fallback: explicitly clear potential residual cookies
+  res.cookies.set({ name: "sb-access-token", value: "", path: "/", maxAge: 0 });
+  res.cookies.set({ name: "sb-refresh-token", value: "", path: "/", maxAge: 0 });
   return res;
 }
