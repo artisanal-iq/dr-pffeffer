@@ -4,6 +4,15 @@
  Stack: Next.js (App Router) + TypeScript, TailwindCSS + shadcn/ui, React Query + Zustand, Supabase (Auth/Postgres/RLS), Drizzle ORM, Vercel AI SDK (stubs), Vercel deploy
  Package manager: pnpm
 
+## Implementation Status (March 2025)
+
+- ✅ App Router scaffold with dedicated routes for dashboard, planner, journal, connections, and settings (placeholders where UI work is pending).
+- ✅ Supabase browser/server clients wired for authenticated access across route handlers.
+- ✅ REST-style route handlers for journals/tasks/power practices/connections/settings backed by Supabase queries.
+- ✅ Drizzle ORM schema mirrors the Supabase SQL migration shipped in `supabase/sql/initial_schema.sql`.
+- ✅ Journal feature exposes React Query hooks and a client component for creating, listing, summarizing, and deleting entries.
+- ⚠️ Authentication UI, dashboards, planner interactions, and AI prompts still require implementation.
+
  ## 1) System Architecture
 
  - Frontend: Next.js App Router (server components-first), TailwindCSS, shadcn/ui

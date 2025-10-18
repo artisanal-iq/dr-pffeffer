@@ -194,7 +194,17 @@ Indexes on `user_id` for all tables.
 
 ---
 
-## 13. Timeline (High-Level)
+## 13. Current Progress Snapshot (March 2025)
+
+- ✅ Repository scaffolding includes App Router pages for dashboard, planner, journal, connections, and settings.
+- ✅ Journal workflows implemented end-to-end (React Query hooks + Supabase route handlers).
+- ✅ Supabase integration in place with server/browser clients and Drizzle schema.
+- ⚠️ AI prompts, dashboards, planner auto-scheduling, and relationship insights remain in design.
+- ⚠️ Authentication experience and onboarding copy still need UX treatment.
+
+---
+
+## 14. Timeline (High-Level)
 
 | Phase                     | Duration       | Deliverables                   |
 | ------------------------- | -------------- | ------------------------------ |
