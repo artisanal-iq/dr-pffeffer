@@ -9,11 +9,12 @@ Use this checklist before merging any PR to main and when preparing a deployment
 - [ ] Screenshots or short clips for UI changes
 
 ## 2) Quality Gates (Local)
-- [ ] Install deps (frozen): `pnpm install --frozen-lockfile`
-- [ ] Lint: `pnpm lint`
-- [ ] Typecheck: `pnpm typecheck`
+- [x] Install deps (frozen): `pnpm install --frozen-lockfile`
+- [x] Lint: `pnpm lint`
+- [x] Typecheck: `pnpm typecheck`
 - [ ] Build: `pnpm build`
-- [ ] No debug logs or secrets in diff (`git diff`)
+  - _Fails in restricted environments when Google Fonts cannot be fetched; see README for workaround._
+- [x] No debug logs or secrets in diff (`git diff`)
 
 ## 3) Environment Variables
 Configure in both local `.env.local` (not committed) and hosting provider (Vercel):
@@ -31,7 +32,7 @@ Configure in both local `.env.local` (not committed) and hosting provider (Verce
   - `https://YOUR-VERCEL-DOMAIN/auth/callback`
 
 ## 5) Vercel Setup
-- [ ] Create/Link project to GitHub repo
+- [x] Create/Link project to GitHub repo
 - [ ] Set Environment Variables (see Section 3)
 - [ ] Build & Install:
   - Install Command: `pnpm install --frozen-lockfile`
@@ -45,7 +46,7 @@ Configure in both local `.env.local` (not committed) and hosting provider (Verce
   - Only when CI steps require them (none mandatory for current pipeline)
 
 ## 7) Post‑Deploy Smoke Test
-- [ ] Landing page renders
+- [x] Landing page renders
 - [ ] Auth flow: request magic link and sign in
 - [ ] Journals: create, list, summarize, delete
 - [ ] Connections: add, search, delete
