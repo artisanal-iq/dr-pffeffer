@@ -13,6 +13,7 @@ export async function GET(req: Request) {
     redirectTo,
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
   );
+  const isSecure = redirectUrl.protocol === "https:";
 
   // Prepare response early so we can attach cookies to it
   const res = NextResponse.redirect(redirectUrl);
@@ -25,10 +26,21 @@ export async function GET(req: Request) {
           return cookieStore.get(name)?.value;
         },
         set(name, value, options) {
-          res.cookies.set({ name, value, ...options });
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+            secure: options?.secure ?? isSecure,
+          });
         },
         remove(name, options) {
-          res.cookies.set({ name, value: "", ...options, maxAge: 0 });
+          res.cookies.set({
+            name,
+            value: "",
+            ...options,
+            maxAge: 0,
+            secure: options?.secure ?? isSecure,
+          });
         },
       },
     });
@@ -43,9 +55,10 @@ export async function GET(req: Request) {
         name: "sb-access-token",
         value: s.access_token,
         httpOnly: true,
-        secure: true,
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
+        expires: s.expires_at ? new Date(s.expires_at * 1000) : undefined,
       });
       // Refresh token
       if (s.refresh_token) {
@@ -53,7 +66,7 @@ export async function GET(req: Request) {
           name: "sb-refresh-token",
           value: s.refresh_token,
           httpOnly: true,
-          secure: true,
+          secure: isSecure,
           sameSite: "lax",
           path: "/",
         });
