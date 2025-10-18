@@ -10,7 +10,8 @@ export default function LoginPage() {
     e.preventDefault();
     setStatus(null);
     const supabase = createSupabaseBrowserClient();
-    const redirectTo = `${window.location.origin}/auth/callback?redirect=/dashboard`;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+    const redirectTo = `${siteUrl}/auth/callback?redirect=/dashboard`;
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
     if (error) setStatus(error.message);
     else setStatus("Check your email for a magic link.");
