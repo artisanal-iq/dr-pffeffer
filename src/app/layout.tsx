@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Geist, Geist_Mono } from "next/font/google";
