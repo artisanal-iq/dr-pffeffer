@@ -11,6 +11,7 @@ full experience.
 - [Technical Specification](docs/technical-spec.md)
 - [PR & Deployment Checklist](docs/PR_DEPLOY_CHECKLIST.md)
 - [Environment Setup Guide](docs/environment-setup.md)
+- [Observability Playbook](docs/observability-playbook.md)
 
 ## Tech Stack
 
@@ -68,6 +69,9 @@ NEXT_PUBLIC_SUPABASE_URL="https://YOUR-PROJECT.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="anon-key"
 OPENAI_API_KEY="optional-key"
 NEXT_PUBLIC_SITE_URL="http://localhost:3000" # update in production
+LOGFLARE_SOURCE_TOKEN="logflare-source-token"
+LOGFLARE_API_KEY="logflare-api-key"
+LOGFLARE_API_URL="https://api.logflare.app/logs" # optional override per-environment
 ```
 
 Additional server-side keys (e.g., `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`) are only required for migrations or background
