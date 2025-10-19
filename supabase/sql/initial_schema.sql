@@ -16,6 +16,26 @@
  create index if not exists tasks_user_id_idx on public.tasks (user_id);
  create index if not exists tasks_scheduled_time_idx on public.tasks (scheduled_time);
 
+ -- Task completion metrics
+ create table if not exists public.task_completion_metrics (
+   user_id uuid not null,
+   bucket_date date not null,
+   completed_count int not null default 0 check (completed_count >= 0),
+   updated_at timestamptz not null default now(),
+   primary key (user_id, bucket_date)
+ );
+ create index if not exists task_completion_metrics_bucket_date_idx on public.task_completion_metrics (bucket_date);
+
+ create or replace view public.task_dashboard_metrics as
+ select
+   m.user_id,
+   coalesce(sum(m.completed_count), 0) as total_completed,
+   coalesce(sum(m.completed_count) filter (where m.bucket_date >= current_date - interval '6 day'), 0) as completed_last_7_days,
+   coalesce(sum(m.completed_count) filter (where m.bucket_date = current_date), 0) as completed_today,
+   max(m.bucket_date) as most_recent_completion_date
+ from public.task_completion_metrics m
+ group by m.user_id;
+
  -- Power practices
  create table if not exists public.power_practices (
    id uuid primary key default gen_random_uuid(),
@@ -92,11 +112,12 @@ create index if not exists audit_events_user_id_idx on public.audit_events (user
 create index if not exists audit_events_event_type_idx on public.audit_events (event_type);
 
  -- RLS
- alter table public.tasks enable row level security;
+alter table public.tasks enable row level security;
 alter table public.power_practices enable row level security;
 alter table public.journals enable row level security;
 alter table public.connections enable row level security;
 alter table public.settings enable row level security;
+alter table public.task_completion_metrics enable row level security;
 alter table public.audit_events enable row level security;
 
  -- Policies template per table
@@ -117,6 +138,79 @@ begin
     execute format('create policy %I on public.%I for delete using (auth.uid() = user_id);', 'owner_delete', t);
  end loop;
 end $$;
+
+drop policy if exists task_completion_metrics_select on public.task_completion_metrics;
+create policy task_completion_metrics_select on public.task_completion_metrics for select using (auth.uid() = user_id);
+
+create or replace function public.apply_task_completion_metrics()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_user uuid;
+  target_date date;
+  delta int;
+begin
+  if (TG_OP = 'INSERT') then
+    if new.status = 'done' then
+      target_user := new.user_id;
+      target_date := coalesce(new.updated_at, now())::date;
+      delta := 1;
+    end if;
+  elsif (TG_OP = 'UPDATE') then
+    if old.status <> 'done' and new.status = 'done' then
+      target_user := new.user_id;
+      target_date := coalesce(new.updated_at, now())::date;
+      delta := 1;
+    elsif old.status = 'done' and new.status <> 'done' then
+      target_user := old.user_id;
+      target_date := coalesce(old.updated_at, now())::date;
+      delta := -1;
+    else
+      return new;
+    end if;
+  elsif (TG_OP = 'DELETE') then
+    if old.status = 'done' then
+      target_user := old.user_id;
+      target_date := coalesce(old.updated_at, now())::date;
+      delta := -1;
+    end if;
+  end if;
+
+  if delta is null then
+    if TG_OP = 'DELETE' then
+      return old;
+    end if;
+    return new;
+  end if;
+
+  insert into public.task_completion_metrics as m (user_id, bucket_date, completed_count, updated_at)
+  values (target_user, target_date, case when delta > 0 then delta else 0 end, now())
+  on conflict (user_id, bucket_date)
+  do update set
+    completed_count = greatest(m.completed_count + delta, 0),
+    updated_at = now();
+
+  if delta < 0 then
+    delete from public.task_completion_metrics
+    where user_id = target_user
+      and bucket_date = target_date
+      and completed_count <= 0;
+  end if;
+
+  if TG_OP = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists task_metrics_after_change on public.tasks;
+create trigger task_metrics_after_change
+after insert or update or delete on public.tasks
+for each row execute function public.apply_task_completion_metrics();
 
 -- Audit helpers
 create or replace function public.log_audit_event(

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, varchar, integer, boolean, time } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, varchar, integer, boolean, time, date, primaryKey } from "drizzle-orm/pg-core";
 
 export const tasks = pgTable("tasks", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -11,6 +11,19 @@ export const tasks = pgTable("tasks", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const taskCompletionMetrics = pgTable(
+  "task_completion_metrics",
+  {
+    userId: uuid("user_id").notNull(),
+    bucketDate: date("bucket_date").notNull(),
+    completedCount: integer("completed_count").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.bucketDate] }),
+  })
+);
 
 export const powerPractices = pgTable("power_practices", {
   id: uuid("id").defaultRandom().primaryKey(),
