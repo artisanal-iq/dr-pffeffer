@@ -10,12 +10,12 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
   } = await supabase.auth.getUser();
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
 
-  const { id } = context.params;
-  const {
-    data: journal,
-    error: jerr,
-  } = await supabase.from("journals").select("id, entry").eq("user_id", user.id).eq("id", id).single();
-  if (jerr || !journal) return respond({ error: { code: "not_found", message: jerr?.message ?? "Not found" } }, { status: 404 });
+  const { id } = await context.params;
+    const {
+      data: journal,
+      error: jerr,
+    } = await supabase.from("journals").select("id, entry").eq("user_id", user.id).eq("id", id).single();
+    if (jerr || !journal) return respond({ error: { code: "not_found", message: jerr?.message ?? "Not found" } }, { status: 404 });
 
   try {
     const { summary, metadata } = generateRuleBasedSummary(journal.entry);

@@ -1,12 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
-type SupabaseRpc = SupabaseClient extends { rpc: (...args: infer Args) => infer Return }
-  ? (...args: Args) => Return
-  : never;
-
-type RpcCapableSupabaseClient = { rpc: SupabaseRpc };
+type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 function toSafeJson(metadata?: JsonRecord | null) {
   return metadata ? JSON.parse(JSON.stringify(metadata)) : {};
