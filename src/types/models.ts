@@ -11,6 +11,7 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   scheduled_time: string | null; // ISO
+  duration_minutes: number;
   context: TaskContext;
   created_at: string;
   updated_at: string;
@@ -108,4 +109,37 @@ export type Settings = {
   nudge_schedule: NudgeScheduleEntry[];
   created_at: string;
   updated_at: string;
-}
+};
+
+export type Prompt = {
+  id: UUID;
+  slug: string;
+  title: string;
+  body: string;
+  category: string;
+  is_active: boolean;
+  created_by: UUID;
+  updated_by: UUID;
+  archived_by: UUID | null;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+};
+
+export type PromptListResponse = {
+  items: Prompt[];
+};
+
+export type PromptAuditEvent = {
+  id: UUID;
+  prompt_id: UUID;
+  action: "created" | "updated" | "archived" | "restored";
+  actor_id: UUID;
+  actor_email: string | null;
+  changes: Record<string, unknown>;
+  created_at: string;
+};
+
+export type PromptAuditListResponse = {
+  items: PromptAuditEvent[];
+};

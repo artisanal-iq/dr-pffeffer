@@ -5,7 +5,7 @@ import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 const patchSchema = z.object({
   focus: z.string().max(2000).optional(),
   reflection: z.string().max(4000).optional().nullable(),
-  rating: z.number().int().min(1).max(10).optional().nullable(),
+  rating: z.number().int().min(1).max(5).optional().nullable(),
 });
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {

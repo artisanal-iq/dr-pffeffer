@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "postinstall": "node scripts/postinstall.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -44,5 +45,15 @@
     "typescript": "^5",
     "@playwright/test": "^1.49.1",
     "vitest": "^2.1.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tailwindcss/node",
+      "@tailwindcss/oxide",
+      "esbuild",
+      "lightningcss",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

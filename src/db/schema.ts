@@ -1,12 +1,15 @@
 import {
   boolean,
+  date,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   time,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -39,17 +42,23 @@ export const taskCompletionMetrics = pgTable(
   })
 );
 
-export const powerPractices = pgTable("power_practices", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull(),
-  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
-  focus: text("focus").notNull(),
-  reflection: text("reflection"),
-  rating: integer("rating"), // 1..5
-  aiFeedback: text("ai_feedback"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const powerPractices = pgTable(
+  "power_practices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+    focus: text("focus").notNull(),
+    reflection: text("reflection"),
+    rating: integer("rating"), // 1..5
+    aiFeedback: text("ai_feedback"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userDateKey: uniqueIndex("power_practices_user_date_key").on(table.userId, table.date),
+  })
+);
 
 export const journals = pgTable("journals", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -91,4 +100,36 @@ export const settings = pgTable("settings", {
     .default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const prompts = pgTable("prompts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  category: text("category").notNull().default("general"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: uuid("created_by").notNull(),
+  updatedBy: uuid("updated_by").notNull(),
+  archivedBy: uuid("archived_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+});
+
+export const promptAuditActionEnum = pgEnum("prompt_audit_action", [
+  "created",
+  "updated",
+  "archived",
+  "restored",
+]);
+
+export const promptAudits = pgTable("prompt_audits", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  promptId: uuid("prompt_id").notNull(),
+  action: promptAuditActionEnum("action").notNull(),
+  actorId: uuid("actor_id").notNull(),
+  actorEmail: text("actor_email"),
+  changes: jsonb("changes").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
