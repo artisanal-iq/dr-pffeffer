@@ -9,7 +9,7 @@
  } from "@/lib/profile-schema";
 
 export default function SettingsClient() {
-  const { data } = useSettings();
+  const { data, isLoading } = useSettings();
   const upsert = useUpsertSettings();
   const [theme, setTheme] = useState<string>("");
   const [notifications, setNotifications] = useState<boolean>(true);
@@ -31,7 +31,40 @@ export default function SettingsClient() {
       setThemeContrast(data.theme_contrast ?? "");
       setAccentColor(data.accent_color ?? "");
     }
-  }, [data]);
+  }, [data?.ai_persona]);
+
+  useEffect(() => {
+    if (typeof data?.notifications === "boolean") {
+      setNotificationsEnabled(data.notifications);
+    }
+  }, [data?.notifications]);
+
+  const isNotificationsPending = upsert.isPending;
+
+  const handleNotificationChange = async (nextValue: boolean) => {
+    setNotificationError(null);
+    const previous = notificationsEnabled;
+    setNotificationsEnabled(nextValue);
+    try {
+      await upsert.mutateAsync({ notifications: nextValue });
+    } catch (error) {
+      setNotificationsEnabled(previous);
+      setNotificationError("Unable to update notifications. Try again.");
+    }
+  };
+
+  const handleAiSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAiStatus("idle");
+    try {
+      await upsert.mutateAsync({ ai_persona: aiPersona.trim() ? aiPersona.trim() : null });
+      setAiStatus("success");
+    } catch (error) {
+      setAiStatus("error");
+    }
+  };
+
+  const isBusy = useMemo(() => isLoading || themeSyncing, [isLoading, themeSyncing]);
 
   return (
     <form
