@@ -5,10 +5,12 @@ export const qk = {
     all: () => ["tasks"] as const,
     list: (params?: TaskListParamsNormalized | null) => ["tasks", "list", params ?? null] as const,
     detail: (id: string) => ["tasks", "detail", id] as const,
+    window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
   },
   journals: {
     all: () => ["journals"] as const,
-    list: (params?: { from?: string; to?: string }) => ["journals", params] as const,
+    list: (params?: { from?: string; to?: string; tags?: string[] }) => ["journals", "list", params] as const,
+    infinite: (params?: { from?: string; to?: string; tags?: string[] }) => ["journals", "infinite", params] as const,
     detail: (id: string) => ["journals", "detail", id] as const,
   },
   powerPractices: {
@@ -20,11 +22,6 @@ export const qk = {
     all: () => ["connections"] as const,
     list: (q?: string | null) => ["connections", q] as const,
     detail: (id: string) => ["connections", "detail", id] as const,
-  },
-  tasks: {
-    all: () => ["tasks"] as const,
-    window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
-    detail: (id: string) => ["tasks", "detail", id] as const,
   },
   settings: {
     root: () => ["settings"] as const,

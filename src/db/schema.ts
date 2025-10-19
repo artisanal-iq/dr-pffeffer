@@ -1,15 +1,18 @@
 import {
   boolean,
+  date,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   time,
   timestamp,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const taskStatusEnum = pgEnum("task_status", ["todo", "in_progress", "done"]);
 export const taskPriorityEnum = pgEnum("task_priority", ["low", "medium", "high"]);
@@ -56,6 +59,7 @@ export const journals = pgTable("journals", {
   userId: uuid("user_id").notNull(),
   entry: text("entry").notNull(),
   aiSummary: text("ai_summary"),
+  tags: text("tags").array().$type<string[]>().notNull().default(sql`'{}'::text[]`),
   date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

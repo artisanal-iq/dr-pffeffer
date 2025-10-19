@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
+const tagSchema = z
+  .string()
+  .min(1)
+  .max(32)
+  .transform((value) => value.trim())
+  .refine((value) => value.length > 0, { message: "Tag cannot be blank" });
+
 const patchSchema = z.object({
   entry: z.string().max(8000).optional(),
-  aiSummary: z.string().optional().nullable(),
+  ai_summary: z.string().optional().nullable(),
   date: z.string().min(10).max(10).optional(),
+  tags: z.array(tagSchema).max(12).optional(),
 });
 
 export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {

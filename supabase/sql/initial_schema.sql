@@ -118,12 +118,17 @@ $$;
    user_id uuid not null,
    entry text not null,
    ai_summary text null,
+   tags text[] not null default '{}'::text[],
    date text not null,
    created_at timestamptz not null default now(),
    updated_at timestamptz not null default now()
  );
+ alter table public.journals
+   add column if not exists tags text[] not null default '{}'::text[];
  create index if not exists journals_user_id_idx on public.journals (user_id);
  create index if not exists journals_date_idx on public.journals (date);
+ create index if not exists journals_user_date_idx on public.journals (user_id, date desc);
+ create index if not exists journals_tags_idx on public.journals using gin (tags);
 
  -- Connections
  create table if not exists public.connections (

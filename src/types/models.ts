@@ -59,6 +59,7 @@ export type Journal = {
   user_id: UUID;
   entry: string;
   ai_summary: string | null;
+  tags: string[];
   date: string; // YYYY-MM-DD
   created_at: string;
   updated_at: string;
