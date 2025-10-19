@@ -1,4 +1,4 @@
- import { pgTable, uuid, text, timestamp, varchar, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, varchar, integer, boolean, time } from "drizzle-orm/pg-core";
 
 export const tasks = pgTable("tasks", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -53,6 +53,11 @@ export const settings = pgTable("settings", {
   theme: varchar("theme", { length: 16 }), // light | dark | system
   notifications: boolean("notifications").default(true).notNull(),
   aiPersona: text("ai_persona"),
+  persona: text("persona"),
+  workStart: time("work_start"),
+  workEnd: time("work_end"),
+  themeContrast: varchar("theme_contrast", { length: 24 }),
+  accentColor: varchar("accent_color", { length: 24 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
