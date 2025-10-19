@@ -87,15 +87,114 @@ $$;
  );
  create index if not exists task_completion_metrics_bucket_date_idx on public.task_completion_metrics (bucket_date);
 
- create or replace view public.task_dashboard_metrics as
- select
-   m.user_id,
-   coalesce(sum(m.completed_count), 0) as total_completed,
-   coalesce(sum(m.completed_count) filter (where m.bucket_date >= current_date - interval '6 day'), 0) as completed_last_7_days,
-   coalesce(sum(m.completed_count) filter (where m.bucket_date = current_date), 0) as completed_today,
-   max(m.bucket_date) as most_recent_completion_date
- from public.task_completion_metrics m
- group by m.user_id;
+create or replace view public.task_dashboard_metrics as
+select
+  m.user_id,
+  coalesce(sum(m.completed_count), 0) as total_completed,
+  coalesce(sum(m.completed_count) filter (where m.bucket_date >= current_date - interval '6 day'), 0) as completed_last_7_days,
+  coalesce(sum(m.completed_count) filter (where m.bucket_date = current_date), 0) as completed_today,
+  max(m.bucket_date) as most_recent_completion_date
+from public.task_completion_metrics m
+group by m.user_id;
+
+-- Reflection metrics
+create or replace view public.reflection_dashboard_metrics as
+with reflections as (
+  select
+    user_id,
+    date::date as reflection_date,
+    case
+      when coalesce(nullif(btrim(reflection), ''), null) is not null then true
+      when rating between 1 and 5 then true
+      else false
+    end as has_reflection,
+    case
+      when rating between 1 and 5 then rating
+      else null
+    end as valid_rating
+  from public.power_practices
+),
+latest_reflection as (
+  select user_id, max(reflection_date) as latest_reflection_date
+  from reflections
+  where has_reflection
+  group by user_id
+),
+confidence_all_time as (
+  select user_id, avg(valid_rating)::numeric(10, 4) as avg_confidence_all_time
+  from reflections
+  where valid_rating is not null
+  group by user_id
+),
+confidence_last_7_days as (
+  select user_id, avg(valid_rating)::numeric(10, 4) as avg_confidence_last_7_days
+  from reflections
+  where valid_rating is not null
+    and reflection_date >= current_date - interval '6 day'
+  group by user_id
+),
+reflections_last_7_days as (
+  select user_id, count(*) as reflections_last_7_days
+  from reflections
+  where has_reflection
+    and reflection_date >= current_date - interval '6 day'
+  group by user_id
+),
+streak_source as (
+  select user_id, reflection_date
+  from reflections
+  where has_reflection
+),
+streak_groups as (
+  select
+    user_id,
+    reflection_date,
+    reflection_date - (row_number() over (partition by user_id order by reflection_date))::int as streak_group
+  from streak_source
+),
+streak_lengths as (
+  select
+    user_id,
+    streak_group,
+    count(*) as streak_length,
+    max(reflection_date) as streak_end_date
+  from streak_groups
+  group by user_id, streak_group
+),
+current_streak as (
+  select
+    s.user_id,
+    s.streak_length as current_reflection_streak
+  from streak_lengths s
+  join (
+    select user_id, max(reflection_date) as latest_reflection_date
+    from streak_source
+    group by user_id
+  ) latest on latest.user_id = s.user_id and s.streak_end_date = latest.latest_reflection_date
+),
+best_streak as (
+  select user_id, max(streak_length) as best_reflection_streak
+  from streak_lengths
+  group by user_id
+)
+select
+  base.user_id,
+  cat.avg_confidence_all_time,
+  cl7.avg_confidence_last_7_days,
+  coalesce(r7.reflections_last_7_days, 0) as reflections_last_7_days,
+  coalesce(cs.current_reflection_streak, 0) as current_reflection_streak,
+  coalesce(bs.best_reflection_streak, 0) as best_reflection_streak,
+  latest.latest_reflection_date
+from (
+  select distinct user_id
+  from reflections
+) base
+left join confidence_all_time cat on cat.user_id = base.user_id
+left join confidence_last_7_days cl7 on cl7.user_id = base.user_id
+left join reflections_last_7_days r7 on r7.user_id = base.user_id
+left join current_streak cs on cs.user_id = base.user_id
+left join best_streak bs on bs.user_id = base.user_id
+left join latest_reflection latest on latest.user_id = base.user_id;
 
  -- Power practices
  create table if not exists public.power_practices (
