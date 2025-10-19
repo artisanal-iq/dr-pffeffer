@@ -7,7 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "validate-env": "node scripts/validate-env.mjs",
+    "postinstall": "node scripts/setup-git-hooks.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
