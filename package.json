@@ -7,7 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:test": "tsc -p tsconfig.test.json && node scripts/prepare-test-paths.mjs",
+    "test": "pnpm run build:test && node --require ./scripts/register-test-alias.cjs --test dist-test/tests"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
