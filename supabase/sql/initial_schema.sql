@@ -115,13 +115,14 @@ $$;
  -- Journals
  create table if not exists public.journals (
    id uuid primary key default gen_random_uuid(),
-   user_id uuid not null,
-   entry text not null,
-   ai_summary text null,
-   date text not null,
-   created_at timestamptz not null default now(),
-   updated_at timestamptz not null default now()
- );
+  user_id uuid not null,
+  entry text not null,
+  ai_summary text null,
+  summary_metadata jsonb null,
+  date text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
  create index if not exists journals_user_id_idx on public.journals (user_id);
  create index if not exists journals_date_idx on public.journals (date);
 

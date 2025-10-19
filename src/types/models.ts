@@ -54,11 +54,23 @@ export type TaskDashboardMetric = {
   most_recent_completion_date: string | null;
 }
 
+export type JournalSummaryMetadata = {
+  tone: "positive" | "neutral" | "negative";
+  confidence: "low" | "medium" | "high";
+  influence: "low" | "medium" | "high";
+  key_themes: string[];
+  behavior_cue: string;
+  word_count: number;
+  evidence: string[];
+  generated_at: string;
+};
+
 export type Journal = {
   id: UUID;
   user_id: UUID;
   entry: string;
   ai_summary: string | null;
+  summary_metadata: JournalSummaryMetadata | null;
   date: string; // YYYY-MM-DD
   created_at: string;
   updated_at: string;
