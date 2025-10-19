@@ -22,9 +22,11 @@ export const qk = {
     list: (q?: string | null) => ["connections", q] as const,
     detail: (id: string) => ["connections", "detail", id] as const,
   },
-  metrics: {
-    summary: () => ["metrics", "summary"] as const,
-    daily: (range?: { from?: string | null; to?: string | null }) => ["metrics", "daily", range ?? null] as const,
+  prompts: {
+    all: () => ["prompts"] as const,
+    list: (includeArchived: boolean) => ["prompts", "list", includeArchived] as const,
+    detail: (id: string) => ["prompts", "detail", id] as const,
+    audit: (promptId: string) => ["prompts", "audit", promptId] as const,
   },
   settings: {
     root: () => ["settings"] as const,

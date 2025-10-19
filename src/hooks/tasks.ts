@@ -47,6 +47,7 @@ export type TaskPatchInput = {
   status?: TaskStatus;
   priority?: TaskPriority;
   scheduledTime?: string | null;
+  durationMinutes?: number;
   context?: TaskContext;
 };
 
@@ -68,6 +69,16 @@ export function useTasks(params?: TaskListParams) {
     queryKey: qk.tasks.list(keyParams),
     queryFn: () =>
       apiFetch<TaskListResponse>(`/api/tasks${search.toString() ? `?${search.toString()}` : ""}`),
+  });
+}
+
+export type TaskWindowParams = { from: string; to: string; limit?: number };
+
+export function useTasksWindow(range: TaskWindowParams) {
+  return useTasks({
+    from: range.from,
+    to: range.to,
+    limit: range.limit,
   });
 }
 
@@ -193,6 +204,55 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const qc = useQueryClient();
   return useMutation(createUpdateTaskMutationOptions(qc));
+}
+
+export type UpdateTaskScheduleInput = {
+  id: string;
+  scheduledTime: string | null;
+  durationMinutes?: number;
+};
+
+export function useUpdateTaskSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, scheduledTime, durationMinutes }: UpdateTaskScheduleInput) =>
+      apiFetch<Task>(`/api/tasks/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          scheduledTime,
+          ...(durationMinutes !== undefined ? { durationMinutes } : {}),
+        }),
+      }),
+    onMutate: async ({ id, scheduledTime, durationMinutes }) => {
+      await qc.cancelQueries({ queryKey: qk.tasks.all() });
+      const snapshot = snapshotTasks(qc);
+      const previousTask = findTaskInSnapshot(snapshot, id);
+      if (previousTask) {
+        const optimisticTask: Task = {
+          ...previousTask,
+          scheduled_time: scheduledTime ?? null,
+          duration_minutes:
+            durationMinutes ?? previousTask.duration_minutes,
+        };
+        applyTaskToCaches(qc, optimisticTask);
+      }
+      return { snapshot, previousTask } satisfies TaskUpdateContext;
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.snapshot) {
+        restoreSnapshot(qc, context.snapshot);
+      }
+    },
+    onSuccess: (task) => {
+      applyTaskToCaches(qc, task);
+    },
+    onSettled: (_data, _error, variables) => {
+      if (variables?.id) {
+        qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
+      }
+      qc.invalidateQueries({ queryKey: qk.tasks.all() });
+    },
+  });
 }
 
 export function useDeleteTask() {

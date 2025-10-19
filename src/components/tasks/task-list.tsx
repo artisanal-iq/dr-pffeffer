@@ -124,6 +124,8 @@ function VirtualizedTaskRows({ tasks }: VirtualizedListProps) {
       ref={containerRef}
       className="max-h-[480px] overflow-auto border-t"
       onScroll={handleScroll}
+      role="rowgroup"
+      aria-label="Routine tasks"
     >
       <div style={{ height: totalHeight, position: "relative" }}>
         <div style={{ transform: `translateY(${offsetY}px)` }}>
@@ -141,12 +143,23 @@ function TaskRow({ task }: { task: Task }) {
     <div
       className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(140px,1fr))] items-center gap-2 border-b px-4 py-3 last:border-b-0"
       style={{ height: ROW_HEIGHT }}
+      role="row"
     >
-      <div className="truncate font-medium">{task.title}</div>
-      <div className="capitalize text-sm text-muted-foreground">{task.status.replace(/_/g, " ")}</div>
-      <div className="capitalize text-sm text-muted-foreground">{task.priority}</div>
-      <div className="text-sm text-muted-foreground">{formatDate(task.scheduled_time)}</div>
-      <div className="text-sm text-muted-foreground">{formatDate(task.created_at)}</div>
+      <div className="truncate font-medium" role="cell">
+        {task.title}
+      </div>
+      <div className="capitalize text-sm text-muted-foreground" role="cell">
+        {task.status.replace(/_/g, " ")}
+      </div>
+      <div className="capitalize text-sm text-muted-foreground" role="cell">
+        {task.priority}
+      </div>
+      <div className="text-sm text-muted-foreground" role="cell">
+        {formatDate(task.scheduled_time)}
+      </div>
+      <div className="text-sm text-muted-foreground" role="cell">
+        {formatDate(task.created_at)}
+      </div>
     </div>
   );
 }
@@ -164,6 +177,12 @@ function SortButton({
   direction: SortDirection;
   onToggle: (column: ColumnKey) => void;
 }) {
+  const currentDirection = active ? (direction === "asc" ? "ascending" : "descending") : "none";
+  const nextDirection = active && direction === "asc" ? "descending" : "ascending";
+  const ariaLabel = active
+    ? `${label} sorted ${currentDirection}. Activate to sort ${nextDirection}.`
+    : `Sort by ${label}`;
+
   return (
     <button
       type="button"
@@ -172,6 +191,8 @@ function SortButton({
         "flex items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
         active && "text-foreground"
       )}
+      aria-pressed={active}
+      aria-label={ariaLabel}
     >
       <span>{label}</span>
       <span aria-hidden className="text-[10px]">
@@ -184,13 +205,15 @@ function SortButton({
 export default function TaskList() {
   const [state, setState] = useState<TaskListState>(initialState);
   const { data, isLoading, isError, error } = useTasks({
-    status: state.status === "all" ? null : state.status,
-    from: state.from ? new Date(`${state.from}T00:00:00`).toISOString() : null,
-    to: state.to ? new Date(`${state.to}T23:59:59.999`).toISOString() : null,
+    status: state.status === "all" ? undefined : state.status,
+    from: state.from ? new Date(`${state.from}T00:00:00`).toISOString() : undefined,
+    to: state.to ? new Date(`${state.to}T23:59:59.999`).toISOString() : undefined,
   });
 
-  const tasks = data?.items ?? [];
-  const filteredTasks = useMemo(() => applyClientFilters(tasks, state), [tasks, state]);
+  const filteredTasks = useMemo(() => {
+    const items = data?.items ?? [];
+    return applyClientFilters(items, state);
+  }, [data?.items, state]);
 
   const toggleSort = useCallback((column: ColumnKey) => {
     setState((prev) => {
@@ -216,7 +239,7 @@ export default function TaskList() {
   const showEmpty = !isLoading && !isError && filteredTasks.length === 0;
 
   return (
-    <Card className="mt-8">
+    <Card className="mt-8" role="region" aria-label="Daily routine tasks">
       <CardHeader>
         <CardTitle>Tasks</CardTitle>
         <CardDescription>Review and filter your upcoming work.</CardDescription>
@@ -267,7 +290,7 @@ export default function TaskList() {
               onChange={(event) => handleDateChange("to", event.target.value)}
             />
           </label>
-          <div className="ml-auto text-sm text-muted-foreground">
+          <div className="ml-auto text-sm text-muted-foreground" aria-live="polite" aria-atomic="true">
             {isLoading && <span>Loading tasks…</span>}
             {isError && <span role="alert">{error?.message ?? "Failed to load tasks"}</span>}
             {!isLoading && !isError && data?.count != null && (
@@ -275,25 +298,34 @@ export default function TaskList() {
             )}
           </div>
         </div>
-        <div className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(140px,1fr))] items-center gap-2 px-4 pb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {columnConfig.map((column) => (
-            <SortButton
-              key={column.key}
-              column={column.key}
-              label={column.label}
-              active={state.sortKey === column.key}
-              direction={state.sortDirection}
-              onToggle={toggleSort}
-            />
-          ))}
+        <div role="grid" aria-readonly="true" aria-rowcount={filteredTasks.length}>
+          <div
+            className="grid grid-cols-[minmax(220px,2fr)_repeat(4,minmax(140px,1fr))] items-center gap-2 px-4 pb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            role="row"
+          >
+            {columnConfig.map((column) => {
+              const isActive = state.sortKey === column.key;
+              const ariaSort = isActive ? (state.sortDirection === "asc" ? "ascending" : "descending") : "none";
+              return (
+                <div key={column.key} role="columnheader" aria-sort={ariaSort}>
+                  <SortButton
+                    column={column.key}
+                    label={column.label}
+                    active={isActive}
+                    direction={state.sortDirection}
+                    onToggle={toggleSort}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          {!showEmpty ? <VirtualizedTaskRows tasks={filteredTasks} /> : null}
         </div>
         {showEmpty ? (
           <div className="py-12 text-center text-sm text-muted-foreground" role="status">
             No tasks match the selected filters.
           </div>
-        ) : (
-          <VirtualizedTaskRows tasks={filteredTasks} />
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

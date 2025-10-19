@@ -11,7 +11,7 @@ export function useSettings() {
   });
 }
 
-type UpsertInput = Partial<Pick<Settings, "theme" | "notifications" | "ai_persona">>;
+type UpsertInput = Partial<Pick<Settings, "theme" | "notifications" | "ai_persona" | "nudge_schedule">>;
 
 type UpsertContext = { previous: Settings | null | undefined };
 
@@ -56,6 +56,7 @@ export function useUpsertSettings() {
           | "work_end"
           | "theme_contrast"
           | "accent_color"
+          | "nudge_schedule"
         >
       >,
     ) => apiFetch<Settings>(`/api/settings`, { method: "POST", body: JSON.stringify(input) }),
