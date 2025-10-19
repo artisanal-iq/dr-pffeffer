@@ -1,9 +1,11 @@
 import {
   boolean,
+  date,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   time,
   timestamp,
@@ -87,4 +89,36 @@ export const settings = pgTable("settings", {
   accentColor: varchar("accent_color", { length: 24 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const prompts = pgTable("prompts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  category: text("category").notNull().default("general"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdBy: uuid("created_by").notNull(),
+  updatedBy: uuid("updated_by").notNull(),
+  archivedBy: uuid("archived_by"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+});
+
+export const promptAuditActionEnum = pgEnum("prompt_audit_action", [
+  "created",
+  "updated",
+  "archived",
+  "restored",
+]);
+
+export const promptAudits = pgTable("prompt_audits", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  promptId: uuid("prompt_id").notNull(),
+  action: promptAuditActionEnum("action").notNull(),
+  actorId: uuid("actor_id").notNull(),
+  actorEmail: text("actor_email"),
+  changes: jsonb("changes").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

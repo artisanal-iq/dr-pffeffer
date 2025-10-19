@@ -125,38 +125,220 @@ $$;
  create index if not exists journals_user_id_idx on public.journals (user_id);
  create index if not exists journals_date_idx on public.journals (date);
 
- -- Connections
- create table if not exists public.connections (
-   id uuid primary key default gen_random_uuid(),
-   user_id uuid not null,
-   name text not null,
-   org text null,
-   category text null,
-   last_contact timestamptz null,
-   next_action text null,
-   notes text null,
-   created_at timestamptz not null default now(),
-   updated_at timestamptz not null default now()
- );
- create index if not exists connections_user_id_idx on public.connections (user_id);
- create index if not exists connections_last_contact_idx on public.connections (last_contact);
+-- Connections
+create table if not exists public.connections (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  name text not null,
+  org text null,
+  category text null,
+  last_contact timestamptz null,
+  next_action text null,
+  notes text null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists connections_user_id_idx on public.connections (user_id);
+create index if not exists connections_last_contact_idx on public.connections (last_contact);
 
- -- Settings
- create table if not exists public.settings (
-   id uuid primary key default gen_random_uuid(),
-   user_id uuid not null,
-   theme text null,
-   notifications boolean not null default true,
-   ai_persona text null,
-   persona text null,
-   work_start time null,
-   work_end time null,
-   theme_contrast text null,
-   accent_color text null,
-   created_at timestamptz not null default now(),
-   updated_at timestamptz not null default now()
- );
- create index if not exists settings_user_id_idx on public.settings (user_id);
+-- Settings
+create table if not exists public.settings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  theme text null,
+  notifications boolean not null default true,
+  ai_persona text null,
+  persona text null,
+  work_start time null,
+  work_end time null,
+  theme_contrast text null,
+  accent_color text null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists settings_user_id_idx on public.settings (user_id);
+
+create table if not exists public.prompts (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null,
+  body text not null,
+  category text not null default 'general',
+  is_active boolean not null default true,
+  created_by uuid not null,
+  updated_by uuid not null,
+  archived_by uuid null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  archived_at timestamptz null,
+  constraint prompts_slug_length check (char_length(slug) between 1 and 120),
+  constraint prompts_title_length check (char_length(title) between 1 and 160)
+);
+create index if not exists prompts_is_active_idx on public.prompts (is_active);
+create index if not exists prompts_category_idx on public.prompts (category);
+
+create type if not exists public.prompt_audit_action as enum ('created', 'updated', 'archived', 'restored');
+
+create table if not exists public.prompt_audits (
+  id uuid primary key default gen_random_uuid(),
+  prompt_id uuid not null references public.prompts (id) on delete cascade,
+  action public.prompt_audit_action not null,
+  actor_id uuid not null,
+  actor_email text null,
+  changes jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists prompt_audits_prompt_id_idx on public.prompt_audits (prompt_id);
+create index if not exists prompt_audits_created_at_idx on public.prompt_audits (created_at desc);
+
+create or replace function public.list_prompts(p_include_archived boolean default false)
+returns setof public.prompts
+language sql
+as $$
+  select *
+  from public.prompts
+  where p_include_archived or archived_at is null
+  order by (archived_at is not null), updated_at desc;
+$$;
+
+create or replace function public.get_prompt(p_id uuid)
+returns public.prompts
+language sql
+as $$
+  select *
+  from public.prompts
+  where id = p_id;
+$$;
+
+create or replace function public.create_prompt(
+  p_slug text,
+  p_title text,
+  p_body text,
+  p_category text,
+  p_user_id uuid,
+  p_user_email text default null
+)
+returns public.prompts
+language plpgsql
+as $$
+declare
+  inserted public.prompts;
+begin
+  insert into public.prompts (slug, title, body, category, created_by, updated_by)
+  values (
+    trim(p_slug),
+    trim(p_title),
+    p_body,
+    coalesce(nullif(trim(p_category), ''), 'general'),
+    p_user_id,
+    p_user_id
+  )
+  returning * into inserted;
+
+  insert into public.prompt_audits (prompt_id, action, actor_id, actor_email, changes)
+  values (
+    inserted.id,
+    'created',
+    p_user_id,
+    p_user_email,
+    jsonb_build_object('after', to_jsonb(inserted))
+  );
+
+  return inserted;
+end;
+$$;
+
+create or replace function public.update_prompt(
+  p_id uuid,
+  p_slug text default null,
+  p_title text default null,
+  p_body text default null,
+  p_category text default null,
+  p_is_active boolean default null,
+  p_user_id uuid,
+  p_user_email text default null
+)
+returns public.prompts
+language plpgsql
+as $$
+declare
+  existing public.prompts;
+  updated public.prompts;
+  new_is_active boolean;
+  effective_action public.prompt_audit_action;
+begin
+  select * into existing
+  from public.prompts
+  where id = p_id
+  for update;
+
+  if not found then
+    return null;
+  end if;
+
+  new_is_active := coalesce(p_is_active, existing.is_active);
+
+  update public.prompts
+  set
+    slug = coalesce(nullif(trim(p_slug), ''), slug),
+    title = coalesce(nullif(trim(p_title), ''), title),
+    body = coalesce(p_body, body),
+    category = coalesce(nullif(trim(p_category), ''), category),
+    is_active = new_is_active,
+    updated_at = now(),
+    updated_by = p_user_id,
+    archived_at = case
+      when new_is_active = false then coalesce(archived_at, now())
+      else null
+    end,
+    archived_by = case
+      when new_is_active = false then coalesce(archived_by, p_user_id)
+      else null
+    end
+  where id = p_id
+  returning * into updated;
+
+  if not found then
+    return null;
+  end if;
+
+  if existing.is_active = true and updated.is_active = false then
+    effective_action := 'archived';
+  elsif existing.is_active = false and updated.is_active = true then
+    effective_action := 'restored';
+  else
+    effective_action := 'updated';
+  end if;
+
+  insert into public.prompt_audits (prompt_id, action, actor_id, actor_email, changes)
+  values (
+    updated.id,
+    effective_action,
+    p_user_id,
+    p_user_email,
+    jsonb_build_object(
+      'before', to_jsonb(existing),
+      'after', to_jsonb(updated)
+    )
+  );
+
+  return updated;
+end;
+$$;
+
+create or replace function public.list_prompt_audits(
+  p_prompt_id uuid,
+  p_limit integer default 20
+)
+returns setof public.prompt_audits
+language sql
+as $$
+  select *
+  from public.prompt_audits
+  where prompt_id = p_prompt_id
+  order by created_at desc, id desc
+  limit greatest(1, coalesce(p_limit, 20));
+$$;
 
 -- Audit events
 create table if not exists public.audit_events (

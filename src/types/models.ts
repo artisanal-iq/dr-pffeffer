@@ -102,4 +102,37 @@ export type Settings = {
   accent_color: string | null;
   created_at: string;
   updated_at: string;
-}
+};
+
+export type Prompt = {
+  id: UUID;
+  slug: string;
+  title: string;
+  body: string;
+  category: string;
+  is_active: boolean;
+  created_by: UUID;
+  updated_by: UUID;
+  archived_by: UUID | null;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+};
+
+export type PromptListResponse = {
+  items: Prompt[];
+};
+
+export type PromptAuditEvent = {
+  id: UUID;
+  prompt_id: UUID;
+  action: "created" | "updated" | "archived" | "restored";
+  actor_id: UUID;
+  actor_email: string | null;
+  changes: Record<string, unknown>;
+  created_at: string;
+};
+
+export type PromptAuditListResponse = {
+  items: PromptAuditEvent[];
+};
