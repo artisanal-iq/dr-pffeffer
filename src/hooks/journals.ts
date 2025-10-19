@@ -38,7 +38,8 @@ export function useCreateJournal() {
 export function useUpdateJournal(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: Partial<Pick<Journal, "entry" | "ai_summary" | "date">>) => apiFetch<Journal>(`/api/journals/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    mutationFn: (patch: Partial<Pick<Journal, "entry" | "ai_summary" | "summary_metadata" | "date">>) =>
+      apiFetch<Journal>(`/api/journals/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.journals.detail(id) });
       qc.invalidateQueries({ queryKey: qk.journals.all() });
