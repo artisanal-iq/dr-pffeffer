@@ -21,7 +21,11 @@ function respondError(applyCookies: ApplyCookies, code: string, message: string,
   return respond<ErrorBody>(applyCookies, { error: { code, message } }, { status });
 }
 
-export async function GET(req: NextRequest, { params }: { params: { promptId: string } }) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ promptId: string }> },
+) {
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
@@ -54,7 +58,11 @@ export async function GET(req: NextRequest, { params }: { params: { promptId: st
   return respond(applyCookies, data);
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { promptId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ promptId: string }> },
+) {
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
@@ -106,7 +114,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { promptId: 
   return respond(applyCookies, data);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { promptId: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ promptId: string }> },
+) {
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },

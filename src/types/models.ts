@@ -11,6 +11,7 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   scheduled_time: string | null; // ISO
+  duration_minutes: number;
   context: TaskContext;
   created_at: string;
   updated_at: string;

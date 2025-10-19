@@ -2,19 +2,8 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Power Practice Planner",
@@ -30,9 +19,7 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser();
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <header className="border-b border-black/10 dark:border-white/10">
           <nav className="mx-auto max-w-5xl px-6 h-14 flex items-center gap-6 text-sm">
             <Link className="font-semibold" href="/">Power Practice</Link>
