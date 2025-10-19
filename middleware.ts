@@ -1,32 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { logUnauthorizedAccess } from "@/lib/audit";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-function forwardCookies(source: NextResponse, destination: NextResponse) {
-  source.cookies.getAll().forEach((cookie) => {
-    destination.cookies.set({
-      name: cookie.name,
-      value: cookie.value,
-      path: cookie.path,
-      expires: cookie.expires,
-      maxAge: cookie.maxAge,
-      sameSite: cookie.sameSite,
-      secure: cookie.secure,
-      httpOnly: cookie.httpOnly,
-    });
-  });
-}
+type SupabaseFactoryResult = {
+  supabase: {
+    auth: {
+      getUser: () => Promise<{ data: { user: { id: string } | null } }>;
+    };
+    from?: SupabaseClient["from"];
+  };
+  applyCookies: (response: NextResponse) => NextResponse;
+};
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+type SupabaseFactory = (
+  req: NextRequest,
+  res: NextResponse
+) => Promise<SupabaseFactoryResult> | SupabaseFactoryResult;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return res;
+type UnauthorizedLogger = (
+  supabase: SupabaseFactoryResult["supabase"],
+  payload: {
+    requestPath: string;
+    ipAddress?: string | null;
+    metadata?: Record<string, unknown>;
   }
+) => Promise<void> | void;
 
+function defaultCreateClient(req: NextRequest, res: NextResponse): SupabaseFactoryResult {
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name) {
@@ -41,66 +47,112 @@ export async function middleware(req: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  return {
+    supabase,
+    applyCookies: (response) => {
+      res.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie);
+      });
+      return response;
+    },
+  };
+}
 
-  const pathname = req.nextUrl.pathname;
-  const isOnboarding = pathname.startsWith("/onboarding");
+async function defaultLogUnauthorized(
+  supabase: SupabaseFactoryResult["supabase"],
+  payload: Parameters<UnauthorizedLogger>[1]
+) {
+  await logUnauthorizedAccess(supabase as SupabaseClient, payload);
+}
 
-  if (!user) {
-    if (isOnboarding) {
+type MiddlewareOptions = {
+  createClient?: SupabaseFactory;
+  logUnauthorized?: UnauthorizedLogger;
+};
+
+function resolveIp(request: NextRequest) {
+  const header = request.headers.get("x-forwarded-for");
+  return header?.split(",")[0]?.trim() ?? null;
+}
+
+export function createAuthMiddleware({
+  createClient = defaultCreateClient,
+  logUnauthorized = defaultLogUnauthorized,
+}: MiddlewareOptions = {}) {
+  return async function authMiddleware(req: NextRequest) {
+    const baseResponse = NextResponse.next();
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return baseResponse;
+    }
+
+    const { supabase, applyCookies } = await createClient(req, baseResponse);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      await logUnauthorized(supabase, {
+        requestPath: req.nextUrl.pathname,
+        ipAddress: resolveIp(req),
+        metadata: { method: req.method },
+      });
+
       const loginUrl = req.nextUrl.clone();
       loginUrl.pathname = "/login";
-      const redirect = NextResponse.redirect(loginUrl);
-      forwardCookies(res, redirect);
-      return redirect;
+      loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
+
+      return applyCookies(NextResponse.redirect(loginUrl));
     }
-    return res;
-  }
 
-  if (pathname.startsWith("/api")) {
-    return res;
-  }
+    if (req.nextUrl.pathname.startsWith("/api")) {
+      return applyCookies(baseResponse);
+    }
 
-  const { data: settings, error } = await supabase
-    .from("settings")
-    .select("persona, work_start, work_end, theme, theme_contrast, accent_color")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+    if (!supabase.from) {
+      return applyCookies(baseResponse);
+    }
 
-  if (error) {
-    return res;
-  }
+    const { data: settings, error } = await supabase
+      .from("settings")
+      .select("persona, work_start, work_end, theme, theme_contrast, accent_color")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
 
-  const profileComplete = Boolean(
-    settings?.persona &&
-      settings?.work_start &&
-      settings?.work_end &&
-      settings?.theme &&
-      settings?.theme_contrast &&
-      settings?.accent_color,
-  );
+    if (error) {
+      return applyCookies(baseResponse);
+    }
 
-  if (!profileComplete && !isOnboarding && pathname !== "/auth/signout") {
-    const onboardingUrl = req.nextUrl.clone();
-    onboardingUrl.pathname = "/onboarding";
-    const redirect = NextResponse.redirect(onboardingUrl);
-    forwardCookies(res, redirect);
-    return redirect;
-  }
+    const profileComplete = Boolean(
+      settings?.persona &&
+        settings?.work_start &&
+        settings?.work_end &&
+        settings?.theme &&
+        settings?.theme_contrast &&
+        settings?.accent_color,
+    );
 
-  if (profileComplete && isOnboarding) {
-    const dashboardUrl = req.nextUrl.clone();
-    dashboardUrl.pathname = "/dashboard";
-    const redirect = NextResponse.redirect(dashboardUrl);
-    forwardCookies(res, redirect);
-    return redirect;
-  }
+    const isOnboarding = req.nextUrl.pathname.startsWith("/onboarding");
 
-  return res;
+    if (!profileComplete && !isOnboarding && req.nextUrl.pathname !== "/auth/signout") {
+      const onboardingUrl = req.nextUrl.clone();
+      onboardingUrl.pathname = "/onboarding";
+      return applyCookies(NextResponse.redirect(onboardingUrl));
+    }
+
+    if (profileComplete && isOnboarding) {
+      const dashboardUrl = req.nextUrl.clone();
+      dashboardUrl.pathname = "/dashboard";
+      return applyCookies(NextResponse.redirect(dashboardUrl));
+    }
+
+    return applyCookies(baseResponse);
+  };
 }
+
+export const middleware = createAuthMiddleware();
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
