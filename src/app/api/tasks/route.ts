@@ -1,6 +1,6 @@
- import { NextRequest, NextResponse } from "next/server";
- import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(200),
@@ -11,12 +11,13 @@ const createTaskSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
+  const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json(
+    return respond(
       { error: { code: "unauthorized", message: "Not authenticated" } },
       { status: 401 }
     );
@@ -37,18 +38,19 @@ export async function GET(req: NextRequest) {
 
   const { data, error, count } = await query;
   if (error) {
-    return NextResponse.json({ error: { code: "db_error", message: error.message } }, { status: 500 });
+    return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
   }
-  return NextResponse.json({ items: data, count });
+  return respond({ items: data, count });
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
+  const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json(
+    return respond(
       { error: { code: "unauthorized", message: "Not authenticated" } },
       { status: 401 }
     );
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = createTaskSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    return respond(
       { error: { code: "invalid_body", message: parsed.error.message } },
       { status: 400 }
     );
@@ -77,7 +79,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: { code: "db_error", message: error.message } }, { status: 500 });
+    return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
   }
-  return NextResponse.json(data, { status: 201 });
+  return respond(data, { status: 201 });
 }

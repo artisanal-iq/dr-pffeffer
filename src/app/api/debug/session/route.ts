@@ -1,17 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
   const cookieNames = cookieStore
     .getAll()
     .map((c) => c.name)
     .filter((n) => n.startsWith("sb-"));
 
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const [{ data: sessionData }, { data: userData }] = await Promise.all([
     supabase.auth.getSession(),
     supabase.auth.getUser(),
@@ -33,5 +33,5 @@ export async function GET() {
       : null,
   };
 
-  return NextResponse.json(safe);
+  return applyCookies(NextResponse.json(safe));
 }
