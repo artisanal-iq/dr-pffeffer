@@ -11,7 +11,6 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
 
   const { id } = await context.params;
-  try {
     const {
       data: journal,
       error: jerr,
