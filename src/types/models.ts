@@ -76,6 +76,16 @@ export type PowerPractice = {
   updated_at: string;
 }
 
+export type ReflectionDashboardMetric = {
+  user_id: UUID;
+  avg_confidence_all_time: number | null;
+  avg_confidence_last_7_days: number | null;
+  reflections_last_7_days: number;
+  current_reflection_streak: number;
+  best_reflection_streak: number;
+  latest_reflection_date: string | null;
+}
+
 export type Connection = {
   id: UUID;
   user_id: UUID;
