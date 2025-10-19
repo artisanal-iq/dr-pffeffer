@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase";
 
 const createSchema = z.object({
   date: z.string().min(10).max(10),

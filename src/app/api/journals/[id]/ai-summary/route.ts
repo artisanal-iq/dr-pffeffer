@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);

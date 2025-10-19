@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase";
 
 const patchSchema = z.object({
   focus: z.string().max(2000).optional(),

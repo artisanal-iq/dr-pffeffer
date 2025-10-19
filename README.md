@@ -24,7 +24,7 @@ full experience.
 ## Status Snapshot
 
 - ✅ Route handlers for journals, tasks, power practices, connections, and settings exist under `src/app/api`.
-- ✅ Supabase client helpers are available for server and browser contexts (`src/lib/supabase-*.ts`).
+- ✅ Supabase client helpers are available for server components, route handlers, middleware, and browsers (`src/lib/supabase/`).
 - ✅ Drizzle models mirror the SQL schema used to bootstrap Supabase.
 - ✅ Journal feature has a functional React Query-based client with create/delete/summarize actions.
 - ⚠️ Authentication UI, AI integrations, and dashboards are still placeholders pending design.
@@ -52,6 +52,8 @@ The development server runs on [http://localhost:3000](http://localhost:3000). R
 ```bash
 pnpm lint
 pnpm typecheck
+pnpm test
+pnpm test:e2e
 pnpm build    # requires outbound network access to download Google Fonts
 ```
 
@@ -60,17 +62,17 @@ pnpm build    # requires outbound network access to download Google Fonts
 
 ### Environment Variables
 
-Create a `.env.local` (not committed) and configure the following values locally and on Vercel:
+Copy `.env.example` to `.env.local` for development and configure the same values in staging/production:
 
-```env
-NEXT_PUBLIC_SUPABASE_URL="https://YOUR-PROJECT.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="anon-key"
-OPENAI_API_KEY="optional-key"
-NEXT_PUBLIC_SITE_URL="http://localhost:3000" # update in production
-```
+| Variable | Local Development | Staging / Production |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` | Supabase project URL for the deployed environment |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key from Supabase | Matching anon key for staging/production |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | Full site URL (e.g., `https://app.example.com`) |
+| `AUTH_TEST_MODE` | `0` (set to `1` only when running automated tests) | `0` |
+| `OPENAI_API_KEY` | Optional – required for AI features | Optional |
 
-Additional server-side keys (e.g., `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`) are only required for migrations or background
-jobs.
+Additional server-side keys (e.g., `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`) are only required for migrations or background jobs. See `.env.example` for a complete reference.
 
 ### Database & Migrations
 

@@ -196,7 +196,7 @@
 
  App routes
  - /(auth)
-   - /login
+   - /auth/sign-in
    - /callback (Supabase)
  - /(app)
    - /dashboard

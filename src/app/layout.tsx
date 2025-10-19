@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServerClient, isAuthTestMode } from "@/lib/supabase";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -26,8 +26,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  type ServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  type SupabaseUser = Awaited<ReturnType<ServerClient["auth"]["getUser"]>>["data"]["user"];
+
+  let user: SupabaseUser | null = null;
+
+  if (!isAuthTestMode()) {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    } catch (error) {
+      console.warn("Failed to retrieve Supabase user", error);
+      user = null;
+    }
+  }
   return (
     <html lang="en">
       <body
@@ -42,11 +55,11 @@ export default async function RootLayout({
             <Link href="/connections" className="hover:underline">Connections</Link>
             <Link href="/settings" className="hover:underline ml-auto">Settings</Link>
             {user ? (
-              <form action="/auth/signout" method="post">
+              <form action="/auth/sign-out" method="post">
                 <button className="hover:underline" type="submit">Sign out</button>
               </form>
             ) : (
-              <Link href="/login" className="hover:underline">Sign in</Link>
+              <Link href="/auth/sign-in" className="hover:underline">Sign in</Link>
             )}
           </nav>
         </header>
