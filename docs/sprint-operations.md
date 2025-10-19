@@ -6,6 +6,7 @@ To keep the sprint board resilient when unexpected issues appear, follow these g
 - During sprint planning, block out **up to four story points** as an “unplanned work” buffer.
 - Track the buffer explicitly on the sprint board (e.g., a placeholder ticket or swimlane note) so the team can see remaining capacity at a glance.
 - Only pull planned backlog items once the buffer is established to avoid accidental overcommitment.
+- Maintain a dedicated buffer lane for unexpected production or test bugs so they never compete with planned delivery work for visibility or prioritization.
 
 ## 2. Log Bugs Against the Buffer
 - Whenever a new defect is discovered mid-sprint, create a **child task linked to the buffer item**.
@@ -16,5 +17,10 @@ To keep the sprint board resilient when unexpected issues appear, follow these g
 - Review the sprint burn-down chart each day to confirm the buffer is still intact or consciously consumed.
 - If unplanned work threatens to exceed the four-point allocation, initiate a trade-off conversation (e.g., descoping a planned story or extending the sprint).
 - Note any trade-offs in the sprint retrospective to refine future buffer sizing.
+
+## 4. Replenish Buffer After Release Reviews
+- During the release review, confirm how much of the buffer lane was used for unplanned production or test fixes.
+- If any allocation remains, automatically roll it into the next sprint’s buffer so the team begins each cycle with a consistent safety margin.
+- Record the carried-over amount in the sprint planning notes to reinforce accountability for maintaining the buffer discipline.
 
 Adhering to these practices keeps the team responsive to surprises without silently derailing sprint commitments.
