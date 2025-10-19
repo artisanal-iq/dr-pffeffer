@@ -1,20 +1,18 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./.test-dist",
     "noEmit": false,
+    "outDir": "dist-test",
     "module": "commonjs",
-    "moduleResolution": "node",
     "target": "ES2019",
-    "declaration": false,
-    "emitDeclarationOnly": false,
-    "types": ["node"],
-    "esModuleInterop": true,
-    "allowJs": false
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "allowJs": false,
+    "isolatedModules": false,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": [
-    "middleware.ts",
-    "src/lib/**/*.ts",
-    "src/__tests__/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist-test"]
 }

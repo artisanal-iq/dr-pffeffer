@@ -1,17 +1,21 @@
- "use client";
- import { useState } from "react";
- import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+"use client";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const search = useSearchParams();
+  const redirectParam = search.get("redirect");
+  const redirectPath = redirectParam && redirectParam.startsWith("/") ? redirectParam : "/dashboard";
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
     const supabase = createSupabaseBrowserClient();
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-    const redirectTo = `${siteUrl}/auth/callback?redirect=/dashboard`;
+    const redirectTo = `${siteUrl}/auth/callback?redirect=${encodeURIComponent(redirectPath)}`;
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
     if (error) setStatus(error.message);
     else setStatus("Check your email for a magic link.");
@@ -29,7 +33,9 @@ export default function LoginPage() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        <button type="submit" className="px-4 py-2 rounded bg-black text-white dark:bg-white dark:text-black">Send magic link</button>
+        <button type="submit" className="px-4 py-2 rounded bg-black text-white dark:bg-white dark:text-black">
+          Send magic link
+        </button>
       </form>
       {status && <p className="mt-3 text-sm opacity-80">{status}</p>}
     </div>

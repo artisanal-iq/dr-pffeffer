@@ -1,69 +1,107 @@
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { createSupabaseMiddlewareClient } from "./src/lib/supabase-middleware";
-import { logUnauthorizedAccess } from "./src/lib/audit";
+import type { NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
-function getClientIp(req: NextRequest) {
-  const header = req.headers.get("x-forwarded-for");
-  if (header) {
-    return header.split(",")[0]?.trim() || null;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
+function forwardCookies(source: NextResponse, destination: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    destination.cookies.set({
+      name: cookie.name,
+      value: cookie.value,
+      path: cookie.path,
+      expires: cookie.expires,
+      maxAge: cookie.maxAge,
+      sameSite: cookie.sameSite,
+      secure: cookie.secure,
+      httpOnly: cookie.httpOnly,
+    });
+  });
+}
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return res;
   }
-  const requestWithIp = req as NextRequest & { ip?: string | null };
-  return requestWithIp.ip ?? null;
-}
 
-type SupabaseAuthClient = {
-  auth: {
-    getUser: () => Promise<{ data: { user: { id: string } | null } }>;
-  };
-};
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name) {
+        return req.cookies.get(name)?.value;
+      },
+      set(name, value, options) {
+        res.cookies.set({ name, value, ...options });
+      },
+      remove(name, options) {
+        res.cookies.set({ name, value: "", ...options, maxAge: 0 });
+      },
+    },
+  });
 
-type MiddlewareClient = {
-  supabase: SupabaseAuthClient;
-  applyCookies: (res: NextResponse) => NextResponse;
-};
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-type MiddlewareDeps = {
-  createClient: (req: NextRequest) => MiddlewareClient;
-  logUnauthorized: (
-    supabase: SupabaseAuthClient,
-    params: { requestPath: string; ipAddress?: string | null; metadata?: Record<string, unknown> }
-  ) => Promise<unknown> | unknown;
-};
+  const pathname = req.nextUrl.pathname;
+  const isOnboarding = pathname.startsWith("/onboarding");
 
-export function createAuthMiddleware({ createClient, logUnauthorized }: MiddlewareDeps) {
-  return async function authMiddleware(req: NextRequest) {
-    const { supabase, applyCookies } = createClient(req);
-    const res = NextResponse.next();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      const redirectUrl = req.nextUrl.clone();
-      redirectUrl.pathname = "/login";
-      redirectUrl.searchParams.set("redirect", `${req.nextUrl.pathname}${req.nextUrl.search}`);
-
-      await logUnauthorized(supabase, {
-        requestPath: req.nextUrl.pathname,
-        ipAddress: getClientIp(req),
-        metadata: {
-          method: req.method,
-        },
-      });
-
-      return applyCookies(NextResponse.redirect(redirectUrl));
+  if (!user) {
+    if (isOnboarding) {
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      const redirect = NextResponse.redirect(loginUrl);
+      forwardCookies(res, redirect);
+      return redirect;
     }
+    return res;
+  }
 
-    return applyCookies(res);
-  };
+  if (pathname.startsWith("/api")) {
+    return res;
+  }
+
+  const { data: settings, error } = await supabase
+    .from("settings")
+    .select("persona, work_start, work_end, theme, theme_contrast, accent_color")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return res;
+  }
+
+  const profileComplete = Boolean(
+    settings?.persona &&
+      settings?.work_start &&
+      settings?.work_end &&
+      settings?.theme &&
+      settings?.theme_contrast &&
+      settings?.accent_color,
+  );
+
+  if (!profileComplete && !isOnboarding && pathname !== "/auth/signout") {
+    const onboardingUrl = req.nextUrl.clone();
+    onboardingUrl.pathname = "/onboarding";
+    const redirect = NextResponse.redirect(onboardingUrl);
+    forwardCookies(res, redirect);
+    return redirect;
+  }
+
+  if (profileComplete && isOnboarding) {
+    const dashboardUrl = req.nextUrl.clone();
+    dashboardUrl.pathname = "/dashboard";
+    const redirect = NextResponse.redirect(dashboardUrl);
+    forwardCookies(res, redirect);
+    return redirect;
+  }
+
+  return res;
 }
-
-export const middleware = createAuthMiddleware({
-  createClient: (req) => createSupabaseMiddlewareClient(req),
-  logUnauthorized: (supabase, params) => logUnauthorizedAccess(supabase as unknown as Parameters<typeof logUnauthorizedAccess>[0], params),
-});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/planner/:path*", "/journal/:path*", "/connections/:path*", "/settings/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
 };

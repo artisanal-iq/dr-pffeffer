@@ -53,6 +53,11 @@ export type Settings = {
   theme: string | null;
   notifications: boolean;
   ai_persona: string | null;
+  persona: string | null;
+  work_start: string | null;
+  work_end: string | null;
+  theme_contrast: string | null;
+  accent_color: string | null;
   created_at: string;
   updated_at: string;
 }
