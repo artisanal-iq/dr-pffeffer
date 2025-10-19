@@ -1,35 +1,35 @@
 "use client";
-
-import { FormEvent, useEffect, useMemo, useState } from "react";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { useThemeSettings } from "@/context/theme-context";
-import { useSettings, useUpsertSettings } from "@/hooks/settings";
-
-const themeOptions = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-] as const;
+ import { useEffect, useState } from "react";
+ import { useSettings, useUpsertSettings } from "@/hooks/settings";
+ import {
+   accentColorOptions,
+   personaOptions,
+   themeContrastOptions,
+   themeModeOptions,
+ } from "@/lib/profile-schema";
 
 export default function SettingsClient() {
   const { data, isLoading } = useSettings();
   const upsert = useUpsertSettings();
-  const { theme, setTheme, isLoading: themeSyncing } = useThemeSettings();
-
-  const [aiPersona, setAiPersona] = useState("");
-  const [aiStatus, setAiStatus] = useState<"idle" | "success" | "error">("idle");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<string>("");
+  const [notifications, setNotifications] = useState<boolean>(true);
+  const [ai, setAi] = useState<string>("");
+  const [persona, setPersona] = useState<string>("");
+  const [workStart, setWorkStart] = useState<string>("");
+  const [workEnd, setWorkEnd] = useState<string>("");
+  const [themeContrast, setThemeContrast] = useState<string>("");
+  const [accentColor, setAccentColor] = useState<string>("");
 
   useEffect(() => {
-    if (data?.ai_persona !== undefined) {
-      setAiPersona(data.ai_persona ?? "");
+    if (data) {
+      setTheme(data.theme ?? "");
+      setNotifications(data.notifications ?? true);
+      setAi(data.ai_persona ?? "");
+      setPersona(data.persona ?? "");
+      setWorkStart(data.work_start ?? "");
+      setWorkEnd(data.work_end ?? "");
+      setThemeContrast(data.theme_contrast ?? "");
+      setAccentColor(data.accent_color ?? "");
     }
   }, [data?.ai_persona]);
 
@@ -67,98 +67,113 @@ export default function SettingsClient() {
   const isBusy = useMemo(() => isLoading || themeSyncing, [isLoading, themeSyncing]);
 
   return (
-    <Tabs defaultValue="theme" className="mt-8">
-      <div className="flex flex-col gap-6 md:flex-row">
-        <TabsList className="w-full max-w-sm justify-start overflow-x-auto md:h-fit md:w-48 md:flex-col">
-          <TabsTrigger value="theme">Theme</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="persona">AI Persona</TabsTrigger>
-        </TabsList>
-        <div className="flex-1">
-          <TabsContent value="theme">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Theme</CardTitle>
-                <CardDescription>Select how the app should look and feel.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-3">
-                  {themeOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      type="button"
-                      variant={theme === option.value ? "default" : "outline"}
-                      onClick={() => setTheme(option.value)}
-                      disabled={themeSyncing}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
-                {themeSyncing && <p className="text-sm text-muted-foreground">Syncing your theme preference…</p>}
-                {isBusy && !themeSyncing && <p className="text-sm text-muted-foreground">Loading your saved preferences…</p>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>Control whether coaching nudges land in your inbox.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-md border border-input bg-muted p-4">
-                  <div>
-                    <Label htmlFor="notifications" className="text-base">Enable notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive reminders and practice prompts.</p>
-                  </div>
-                  <Switch
-                    id="notifications"
-                    checked={notificationsEnabled}
-                    onCheckedChange={handleNotificationChange}
-                    disabled={isNotificationsPending}
-                  />
-                </div>
-                {notificationError ? (
-                  <p className="text-sm text-destructive">{notificationError}</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Updates are saved instantly.</p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="persona">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>AI Persona</CardTitle>
-                <CardDescription>Describe the tone, style, and priorities for your AI coaching assistant.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-4" onSubmit={handleAiSubmit}>
-                  <div className="space-y-2">
-                    <Label htmlFor="ai-persona">Coach instructions</Label>
-                    <Textarea
-                      id="ai-persona"
-                      value={aiPersona}
-                      onChange={(event) => setAiPersona(event.target.value)}
-                      placeholder="e.g. Encourage reflective questions, keep responses under 4 sentences, celebrate small wins."
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button type="submit" disabled={upsert.isPending}>
-                      {upsert.isPending ? "Saving…" : "Save persona"}
-                    </Button>
-                    {aiStatus === "success" && <span className="text-sm text-muted-foreground">Saved!</span>}
-                    {aiStatus === "error" && <span className="text-sm text-destructive">Something went wrong.</span>}
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+    <form
+      className="mt-6 space-y-4 max-w-xl"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        await upsert.mutateAsync({
+          theme: theme || null,
+          notifications,
+          ai_persona: ai || null,
+          persona: persona || null,
+          work_start: workStart || null,
+          work_end: workEnd || null,
+          theme_contrast: themeContrast || null,
+          accent_color: accentColor || null,
+        });
+      }}
+    >
+      <div>
+        <label className="block text-sm mb-1">Theme</label>
+        <select
+          className="w-full border rounded px-3 py-2 bg-transparent"
+          value={theme}
+          onChange={(e) => setTheme(e.target.value)}
+        >
+          <option value="">Select theme</option>
+          {themeModeOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Theme contrast</label>
+        <select
+          className="w-full border rounded px-3 py-2 bg-transparent"
+          value={themeContrast}
+          onChange={(e) => setThemeContrast(e.target.value)}
+        >
+          <option value="">Select contrast</option>
+          {themeContrastOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Accent color</label>
+        <select
+          className="w-full border rounded px-3 py-2 bg-transparent"
+          value={accentColor}
+          onChange={(e) => setAccentColor(e.target.value)}
+        >
+          <option value="">Select color</option>
+          {accentColorOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-2">
+        <input id="notif" type="checkbox" checked={notifications} onChange={(e) => setNotifications(e.target.checked)} />
+        <label htmlFor="notif" className="text-sm">Enable notifications</label>
+      </div>
+      <div>
+        <label className="block text-sm mb-1">AI persona</label>
+        <textarea className="w-full border rounded px-3 py-2 bg-transparent" rows={4} value={ai} onChange={(e) => setAi(e.target.value)} />
+      </div>
+      <div>
+        <label className="block text-sm mb-1">Preferred persona</label>
+        <select
+          className="w-full border rounded px-3 py-2 bg-transparent"
+          value={persona}
+          onChange={(e) => setPersona(e.target.value)}
+        >
+          <option value="">Select persona</option>
+          {personaOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm mb-1">Workday start</label>
+          <input
+            type="time"
+            className="w-full border rounded px-3 py-2 bg-transparent"
+            value={workStart}
+            onChange={(e) => setWorkStart(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm mb-1">Workday end</label>
+          <input
+            type="time"
+            className="w-full border rounded px-3 py-2 bg-transparent"
+            value={workEnd}
+            onChange={(e) => setWorkEnd(e.target.value)}
+          />
         </div>
       </div>
-    </Tabs>
+      <button type="submit" className="px-4 py-2 rounded bg-black text-white dark:bg-white dark:text-black" disabled={upsert.isPending}>
+        {upsert.isPending ? "Saving..." : "Save settings"}
+      </button>
+    </form>
   );
 }

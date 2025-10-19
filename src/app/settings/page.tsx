@@ -1,14 +1,12 @@
+import { requireUser } from "@/lib/auth";
 import ClientBlock from "./SettingsClient";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requireUser("/settings");
   return (
-    <main className="py-10">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-base text-muted-foreground">
-          Configure the experience that keeps your Power Practice in rhythm.
-        </p>
-      </div>
+    <main className="p-8">
+      <h1 className="text-2xl font-semibold">Settings</h1>
+      <p className="text-sm text-muted-foreground mt-2">Preferences for theme, notifications, and AI persona.</p>
       <ClientBlock />
     </main>
   );
