@@ -26,6 +26,19 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const taskCompletionMetrics = pgTable(
+  "task_completion_metrics",
+  {
+    userId: uuid("user_id").notNull(),
+    bucketDate: date("bucket_date").notNull(),
+    completedCount: integer("completed_count").notNull().default(0),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.userId, table.bucketDate] }),
+  })
+);
+
 export const powerPractices = pgTable("power_practices", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").notNull(),

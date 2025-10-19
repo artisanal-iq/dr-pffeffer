@@ -39,6 +39,21 @@ export type TaskListResponse = {
   count: number;
 };
 
+export type TaskCompletionMetric = {
+  user_id: UUID;
+  bucket_date: string; // YYYY-MM-DD
+  completed_count: number;
+  updated_at: string;
+}
+
+export type TaskDashboardMetric = {
+  user_id: UUID;
+  total_completed: number;
+  completed_last_7_days: number;
+  completed_today: number;
+  most_recent_completion_date: string | null;
+}
+
 export type Journal = {
   id: UUID;
   user_id: UUID;
