@@ -24,6 +24,11 @@ export async function POST(req: NextRequest) {
   const { email, redirectTo } = parsed.data;
   const siteUrl = getSiteUrl(req.headers.get("origin"));
   const redirectUrl = resolveAppUrl(redirectTo, siteUrl);
+  const callbackUrl = new URL("/auth/callback", siteUrl);
+  callbackUrl.searchParams.set(
+    "redirect",
+    `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}`
+  );
 
   if (isAuthTestMode()) {
     if (email.toLowerCase().includes("fail")) {
@@ -41,7 +46,7 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: redirectUrl.toString(),
+      emailRedirectTo: callbackUrl.toString(),
     },
   });
 
