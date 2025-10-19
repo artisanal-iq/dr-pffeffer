@@ -61,8 +61,9 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     if (parsed.data.entry !== undefined) {
       patch.entry = await encryptString(parsed.data.entry);
     }
-    if (parsed.data.aiSummary !== undefined) {
-      patch.ai_summary = parsed.data.aiSummary === null ? null : await encryptString(parsed.data.aiSummary);
+    if (parsed.data.ai_summary !== undefined) {
+      patch.ai_summary =
+        parsed.data.ai_summary === null ? null : await encryptString(parsed.data.ai_summary);
     }
     if (parsed.data.date !== undefined) {
       patch.date = parsed.data.date;
