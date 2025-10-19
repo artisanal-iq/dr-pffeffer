@@ -105,12 +105,15 @@ $$;
    focus text not null,
    reflection text null,
    rating int null,
-   ai_feedback text null,
-   created_at timestamptz not null default now(),
-   updated_at timestamptz not null default now()
- );
- create index if not exists power_practices_user_id_idx on public.power_practices (user_id);
- create index if not exists power_practices_date_idx on public.power_practices (date);
+ ai_feedback text null,
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now()
+);
+alter table public.power_practices drop constraint if exists power_practices_user_date_key;
+alter table public.power_practices
+  add constraint power_practices_user_date_key unique (user_id, date);
+create index if not exists power_practices_user_id_idx on public.power_practices (user_id);
+create index if not exists power_practices_date_idx on public.power_practices (date);
 
  -- Journals
  create table if not exists public.journals (

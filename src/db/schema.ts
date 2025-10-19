@@ -1,12 +1,15 @@
 import {
   boolean,
+  date,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   time,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -39,17 +42,23 @@ export const taskCompletionMetrics = pgTable(
   })
 );
 
-export const powerPractices = pgTable("power_practices", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull(),
-  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
-  focus: text("focus").notNull(),
-  reflection: text("reflection"),
-  rating: integer("rating"), // 1..5
-  aiFeedback: text("ai_feedback"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const powerPractices = pgTable(
+  "power_practices",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+    focus: text("focus").notNull(),
+    reflection: text("reflection"),
+    rating: integer("rating"), // 1..5
+    aiFeedback: text("ai_feedback"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userDateKey: uniqueIndex("power_practices_user_date_key").on(table.userId, table.date),
+  })
+);
 
 export const journals = pgTable("journals", {
   id: uuid("id").defaultRandom().primaryKey(),

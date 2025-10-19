@@ -37,6 +37,7 @@ export default async function RootLayout({
           <nav className="mx-auto max-w-5xl px-6 h-14 flex items-center gap-6 text-sm">
             <Link className="font-semibold" href="/">Power Practice</Link>
             <Link href="/dashboard" className="hover:underline">Dashboard</Link>
+            <Link href="/routine" className="hover:underline">Daily routine</Link>
             <Link href="/planner" className="hover:underline">Planner</Link>
             <Link href="/journal" className="hover:underline">Journal</Link>
             <Link href="/connections" className="hover:underline">Connections</Link>
