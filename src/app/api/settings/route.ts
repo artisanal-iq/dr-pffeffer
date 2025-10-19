@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 import { profilePreferencesSchema, timeStringToMinutes } from "@/lib/profile-schema";
+import { logSettingsChange } from "@/lib/audit";
 import { z } from "zod";
 
 const upsertSchema = profilePreferencesSchema

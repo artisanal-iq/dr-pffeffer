@@ -15,7 +15,7 @@ describe("middleware", () => {
         return {
           supabase: {
             auth: {
-              getUser: async () => ({ data: { user: null } }),
+              getUser: async () => ({ data: { user: null }, error: null }),
             },
           },
           applyCookies: (res: NextResponse) => {
@@ -56,7 +56,7 @@ describe("middleware", () => {
       createClient: () => ({
         supabase: {
           auth: {
-            getUser: async () => ({ data: { user: { id: "abc" } } }),
+            getUser: async () => ({ data: { user: { id: "abc" } }, error: null }),
           },
         },
         applyCookies: (res: NextResponse) => {

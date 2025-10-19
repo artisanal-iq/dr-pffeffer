@@ -12,6 +12,11 @@ const baseSettings: Settings = {
   theme: "light",
   notifications: true,
   ai_persona: null,
+  persona: null,
+  work_start: null,
+  work_end: null,
+  theme_contrast: null,
+  accent_color: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
