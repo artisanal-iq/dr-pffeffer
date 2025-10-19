@@ -1,4 +1,8 @@
- export const qk = {
+export const qk = {
+  tasks: {
+    all: () => ["tasks"] as const,
+    list: (params?: unknown) => ["tasks", params] as const,
+  },
   journals: {
     all: () => ["journals"] as const,
     list: (params?: { from?: string; to?: string }) => ["journals", params] as const,

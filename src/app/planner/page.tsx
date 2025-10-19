@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import TaskList from "@/components/tasks/task-list";
 
 export default async function PlannerPage() {
   await requireUser("/planner");
@@ -8,6 +9,7 @@ export default async function PlannerPage() {
       <p className="text-sm text-muted-foreground mt-2">
         Tasks, manual scheduling, and (later) auto-plan controls.
       </p>
+      <TaskList />
     </main>
   );
 }
