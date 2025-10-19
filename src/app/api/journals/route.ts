@@ -1,6 +1,6 @@
- import { NextRequest, NextResponse } from "next/server";
- import { z } from "zod";
- import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
 const createSchema = z.object({
   entry: z.string().min(1).max(8000),
@@ -8,9 +8,10 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
+  const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
+  if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
 
   const search = req.nextUrl.searchParams;
   const from = search.get("from");
@@ -23,21 +24,22 @@ export async function GET(req: NextRequest) {
   if (to) q = q.lte("date", to);
 
   const { data, error, count } = await q;
-  if (error) return NextResponse.json({ error: { code: "db_error", message: error.message } }, { status: 500 });
-  return NextResponse.json({ items: data, count });
+  if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
+  return respond({ items: data, count });
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = await createSupabaseServerClient();
+  const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
+  const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
+  if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
 
   const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: { code: "invalid_body", message: parsed.error.message } }, { status: 400 });
+  if (!parsed.success) return respond({ error: { code: "invalid_body", message: parsed.error.message } }, { status: 400 });
 
   const { entry, date } = parsed.data;
   const { data, error } = await supabase.from("journals").insert({ user_id: user.id, entry, date }).select().single();
-  if (error) return NextResponse.json({ error: { code: "db_error", message: error.message } }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
+  return respond(data, { status: 201 });
 }
