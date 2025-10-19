@@ -150,13 +150,26 @@ $$;
    ai_persona text null,
    persona text null,
    work_start time null,
-   work_end time null,
-   theme_contrast text null,
-   accent_color text null,
-   created_at timestamptz not null default now(),
-   updated_at timestamptz not null default now()
- );
- create index if not exists settings_user_id_idx on public.settings (user_id);
+  work_end time null,
+  theme_contrast text null,
+  accent_color text null,
+  nudge_schedule jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists settings_user_id_idx on public.settings (user_id);
+
+alter table public.settings
+  add column if not exists nudge_schedule jsonb;
+
+update public.settings
+set nudge_schedule = coalesce(nudge_schedule, '[]'::jsonb);
+
+alter table public.settings
+  alter column nudge_schedule set default '[]'::jsonb;
+
+alter table public.settings
+  alter column nudge_schedule set not null;
 
 -- Audit events
 create table if not exists public.audit_events (

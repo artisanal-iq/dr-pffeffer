@@ -89,6 +89,11 @@ export type Connection = {
   updated_at: string;
 }
 
+export type NudgeScheduleEntry = {
+  time: string;
+  enabled: boolean;
+};
+
 export type Settings = {
   id: UUID;
   user_id: UUID;
@@ -100,6 +105,7 @@ export type Settings = {
   work_end: string | null;
   theme_contrast: string | null;
   accent_color: string | null;
+  nudge_schedule: NudgeScheduleEntry[];
   created_at: string;
   updated_at: string;
 }

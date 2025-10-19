@@ -85,6 +85,10 @@ export const settings = pgTable("settings", {
   workEnd: time("work_end"),
   themeContrast: varchar("theme_contrast", { length: 24 }),
   accentColor: varchar("accent_color", { length: 24 }),
+  nudgeSchedule: jsonb("nudge_schedule")
+    .$type<Array<{ time: string; enabled: boolean }>>()
+    .notNull()
+    .default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
