@@ -6,7 +6,11 @@ function respondWith<T>(applyCookies: (response: NextResponse) => NextResponse, 
   return applyCookies(NextResponse.json(body, init));
 }
 
-export async function GET(req: NextRequest, { params }: { params: { taskId: string } }) {
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ taskId: string }> },
+) {
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => respondWith(applyCookies, body, init);
   const {
@@ -25,7 +29,11 @@ export async function GET(req: NextRequest, { params }: { params: { taskId: stri
   return respond(data);
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { taskId: string } }) {
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ taskId: string }> },
+) {
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => respondWith(applyCookies, body, init);
   const {
@@ -47,6 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { taskId: st
   if (patchInput.status !== undefined) patch.status = patchInput.status;
   if (patchInput.priority !== undefined) patch.priority = patchInput.priority;
   if (patchInput.scheduledTime !== undefined) patch.scheduled_time = patchInput.scheduledTime;
+  if (patchInput.durationMinutes !== undefined) patch.duration_minutes = patchInput.durationMinutes;
   if (patchInput.context !== undefined) patch.context = patchInput.context;
 
   const { data, error } = await supabase.rpc("update_task", {
@@ -63,7 +72,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { taskId: st
   return respond(data);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { taskId: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ taskId: string }> },
+) {
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => respondWith(applyCookies, body, init);
   const {
