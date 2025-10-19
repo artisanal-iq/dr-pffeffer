@@ -1,16 +1,43 @@
  export type UUID = string;
 
+export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskPriority = "low" | "medium" | "high";
+export type TaskContext = Record<string, unknown>;
+
 export type Task = {
   id: UUID;
   user_id: UUID;
   title: string;
-  status: 'todo' | 'in_progress' | 'done';
-  priority: 'low' | 'medium' | 'high';
+  status: TaskStatus;
+  priority: TaskPriority;
   scheduled_time: string | null; // ISO
-  context: string | null;
+  context: TaskContext;
   created_at: string;
   updated_at: string;
-}
+};
+
+export type TaskListParams = {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type TaskListParamsNormalized = {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  from?: string;
+  to?: string;
+  limit: number;
+  offset: number;
+};
+
+export type TaskListResponse = {
+  items: Task[];
+  count: number;
+};
 
 export type Journal = {
   id: UUID;
