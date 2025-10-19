@@ -1,20 +1,81 @@
- -- Extensions
- create extension if not exists pgcrypto;
+-- Extensions
+create extension if not exists pgcrypto;
 
- -- Tasks
- create table if not exists public.tasks (
-   id uuid primary key default gen_random_uuid(),
-   user_id uuid not null,
-   title text not null,
-   status text not null check (status in ('todo','in_progress','done')),
-   priority text not null check (priority in ('low','medium','high')),
-   scheduled_time timestamptz null,
-   context text null,
-   created_at timestamptz not null default now(),
-   updated_at timestamptz not null default now()
- );
- create index if not exists tasks_user_id_idx on public.tasks (user_id);
- create index if not exists tasks_scheduled_time_idx on public.tasks (scheduled_time);
+-- Enum types
+create type if not exists public.task_status as enum ('todo', 'in_progress', 'done');
+create type if not exists public.task_priority as enum ('low', 'medium', 'high');
+
+-- Tasks
+create table if not exists public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  title text not null,
+  status public.task_status not null default 'todo',
+  priority public.task_priority not null default 'medium',
+  scheduled_time timestamptz null,
+  context jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists tasks_user_id_idx on public.tasks (user_id);
+create index if not exists tasks_scheduled_time_idx on public.tasks (scheduled_time);
+
+alter table public.tasks drop constraint if exists tasks_status_check;
+alter table public.tasks drop constraint if exists tasks_priority_check;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'tasks'
+      and column_name = 'status'
+      and udt_name = 'text'
+  ) then
+    alter table public.tasks
+      alter column status type public.task_status
+      using status::public.task_status;
+  end if;
+
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'tasks'
+      and column_name = 'priority'
+      and udt_name = 'text'
+  ) then
+    alter table public.tasks
+      alter column priority type public.task_priority
+      using priority::public.task_priority;
+  end if;
+
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'tasks'
+      and column_name = 'context'
+      and data_type <> 'json'
+  ) then
+    alter table public.tasks alter column context drop default;
+    alter table public.tasks
+      alter column context type jsonb
+      using case
+        when context is null then '{}'::jsonb
+        when pg_typeof(context)::text = 'jsonb' then context::jsonb
+        else to_jsonb(context)
+      end;
+  end if;
+
+  alter table public.tasks alter column status set default 'todo';
+  alter table public.tasks alter column priority set default 'medium';
+  update public.tasks set context = '{}'::jsonb where context is null;
+  alter table public.tasks alter column context set default '{}'::jsonb;
+  alter table public.tasks alter column context set not null;
+end;
+$$;
 
  -- Power practices
  create table if not exists public.power_practices (
@@ -215,7 +276,262 @@ grant execute on function public.log_settings_change(uuid, jsonb) to anon, authe
  do $$
  declare t text;
  begin
-   for t in select unnest(array['tasks','power_practices','journals','connections','settings']) loop
-     execute format('create trigger %I before update on public.%I for each row execute function public.set_updated_at();', t || '_set_updated_at', t);
-   end loop;
+ for t in select unnest(array['tasks','power_practices','journals','connections','settings']) loop
+    execute format('create trigger %I before update on public.%I for each row execute function public.set_updated_at();', t || '_set_updated_at', t);
+  end loop;
  end $$;
+
+-- Task RPC helpers
+create or replace function public.list_tasks(
+  p_status public.task_status default null,
+  p_priority public.task_priority default null,
+  p_from timestamptz default null,
+  p_to timestamptz default null,
+  p_limit integer default 50,
+  p_offset integer default 0
+)
+returns jsonb
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_limit integer := greatest(0, least(coalesce(p_limit, 50), 200));
+  v_offset integer := greatest(0, coalesce(p_offset, 0));
+  v_result jsonb;
+begin
+  if v_user_id is null then
+    raise exception 'list_tasks requires authentication' using errcode = '42501';
+  end if;
+
+  with filtered as (
+    select *
+    from public.tasks
+    where user_id = v_user_id
+      and (p_status is null or status = p_status)
+      and (p_priority is null or priority = p_priority)
+      and (p_from is null or (scheduled_time is not null and scheduled_time >= p_from))
+      and (p_to is null or (scheduled_time is not null and scheduled_time <= p_to))
+  ),
+  counted as (
+    select *, count(*) over() as total_count
+    from filtered
+    order by created_at desc, id desc
+    offset v_offset
+    limit v_limit
+  )
+  select jsonb_build_object(
+      'items', coalesce(jsonb_agg(to_jsonb(counted) - 'total_count'), '[]'::jsonb),
+      'count', coalesce(max(total_count), 0)
+    )
+    into v_result
+  from counted;
+
+  if v_result is null then
+    v_result := jsonb_build_object('items', '[]'::jsonb, 'count', 0);
+  end if;
+
+  perform public.log_audit_event(
+    event_type => 'task.listed',
+    user_id => v_user_id,
+    description => 'Tasks retrieved',
+    request_path => '/rpc/list_tasks',
+    metadata => jsonb_build_object(
+      'status', p_status,
+      'priority', p_priority,
+      'from', p_from,
+      'to', p_to,
+      'limit', v_limit,
+      'offset', v_offset
+    )
+  );
+
+  return v_result;
+end;
+$$;
+
+create or replace function public.get_task(p_task_id uuid)
+returns public.tasks
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_task public.tasks;
+begin
+  if v_user_id is null then
+    raise exception 'get_task requires authentication' using errcode = '42501';
+  end if;
+
+  select *
+  into v_task
+  from public.tasks
+  where id = p_task_id
+    and user_id = v_user_id;
+
+  if not found then
+    raise exception 'Task not found' using errcode = 'P0002';
+  end if;
+
+  perform public.log_audit_event(
+    event_type => 'task.read',
+    user_id => v_user_id,
+    description => 'Task retrieved',
+    request_path => '/rpc/get_task',
+    metadata => jsonb_build_object('task_id', p_task_id)
+  );
+
+  return v_task;
+end;
+$$;
+
+create or replace function public.create_task(
+  p_title text,
+  p_status public.task_status default 'todo',
+  p_priority public.task_priority default 'medium',
+  p_scheduled_time timestamptz default null,
+  p_context jsonb default '{}'::jsonb
+)
+returns public.tasks
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_task public.tasks;
+begin
+  if v_user_id is null then
+    raise exception 'create_task requires authentication' using errcode = '42501';
+  end if;
+
+  insert into public.tasks (
+    user_id,
+    title,
+    status,
+    priority,
+    scheduled_time,
+    context
+  )
+  values (
+    v_user_id,
+    trim(both from p_title),
+    coalesce(p_status, 'todo'),
+    coalesce(p_priority, 'medium'),
+    p_scheduled_time,
+    coalesce(p_context, '{}'::jsonb)
+  )
+  returning * into v_task;
+
+  perform public.log_audit_event(
+    event_type => 'task.created',
+    user_id => v_user_id,
+    description => 'Task created',
+    request_path => '/rpc/create_task',
+    metadata => jsonb_build_object('task_id', v_task.id)
+  );
+
+  return v_task;
+end;
+$$;
+
+create or replace function public.update_task(
+  p_task_id uuid,
+  p_patch jsonb
+)
+returns public.tasks
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_task public.tasks;
+  v_status public.task_status;
+  v_priority public.task_priority;
+begin
+  if v_user_id is null then
+    raise exception 'update_task requires authentication' using errcode = '42501';
+  end if;
+
+  if p_patch is null or jsonb_typeof(p_patch) <> 'object' then
+    raise exception 'update_task patch must be a JSON object' using errcode = '22P02';
+  end if;
+
+  v_status := case when p_patch ? 'status' then (p_patch->>'status')::public.task_status else null end;
+  v_priority := case when p_patch ? 'priority' then (p_patch->>'priority')::public.task_priority else null end;
+
+  update public.tasks
+  set
+    title = coalesce(p_patch->>'title', title),
+    status = coalesce(v_status, status),
+    priority = coalesce(v_priority, priority),
+    scheduled_time = case
+      when p_patch ? 'scheduled_time' then
+        case
+          when p_patch->>'scheduled_time' is null then null
+          else (p_patch->>'scheduled_time')::timestamptz
+        end
+      else scheduled_time
+    end,
+    context = case
+      when p_patch ? 'context' then coalesce(p_patch->'context', '{}'::jsonb)
+      else context
+    end
+  where id = p_task_id
+    and user_id = v_user_id
+  returning * into v_task;
+
+  if not found then
+    raise exception 'Task not found' using errcode = 'P0002';
+  end if;
+
+  perform public.log_audit_event(
+    event_type => 'task.updated',
+    user_id => v_user_id,
+    description => 'Task updated',
+    request_path => '/rpc/update_task',
+    metadata => jsonb_build_object('task_id', v_task.id, 'changes', p_patch)
+  );
+
+  return v_task;
+end;
+$$;
+
+create or replace function public.delete_task(p_task_id uuid)
+returns public.tasks
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_task public.tasks;
+begin
+  if v_user_id is null then
+    raise exception 'delete_task requires authentication' using errcode = '42501';
+  end if;
+
+  delete from public.tasks
+  where id = p_task_id
+    and user_id = v_user_id
+  returning * into v_task;
+
+  if not found then
+    raise exception 'Task not found' using errcode = 'P0002';
+  end if;
+
+  perform public.log_audit_event(
+    event_type => 'task.deleted',
+    user_id => v_user_id,
+    description => 'Task deleted',
+    request_path => '/rpc/delete_task',
+    metadata => jsonb_build_object('task_id', v_task.id)
+  );
+
+  return v_task;
+end;
+$$;
+
+grant execute on function public.list_tasks(public.task_status, public.task_priority, timestamptz, timestamptz, integer, integer) to authenticated;
+grant execute on function public.get_task(uuid) to authenticated;
+grant execute on function public.create_task(text, public.task_status, public.task_priority, timestamptz, jsonb) to authenticated;
+grant execute on function public.update_task(uuid, jsonb) to authenticated;
+grant execute on function public.delete_task(uuid) to authenticated;
