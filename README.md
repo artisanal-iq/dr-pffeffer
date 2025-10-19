@@ -10,7 +10,7 @@ full experience.
 - [Product Requirements Document](docs/prd.md)
 - [Technical Specification](docs/technical-spec.md)
 - [PR & Deployment Checklist](docs/PR_DEPLOY_CHECKLIST.md)
-- [Sprint Operations Guidelines](docs/sprint-operations.md)
+- [Environment Setup Guide](docs/environment-setup.md)
 
 ## Tech Stack
 

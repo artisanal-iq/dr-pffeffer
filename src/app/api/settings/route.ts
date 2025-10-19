@@ -1,12 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+import { profilePreferencesSchema, timeStringToMinutes } from "@/lib/profile-schema";
+import { z } from "zod";
 
-const upsertSchema = z.object({
-  theme: z.string().max(20).optional().nullable(),
-  notifications: z.boolean().optional(),
-  ai_persona: z.string().max(2000).optional().nullable(),
-});
+const upsertSchema = profilePreferencesSchema
+  .extend({
+    theme: profilePreferencesSchema.shape.theme,
+    notifications: z.boolean().optional(),
+    ai_persona: z.string().max(2000).optional().nullable(),
+  })
+  .refine(
+    (value) => {
+      if (!value.work_start && !value.work_end) return true;
+      if (!value.work_start || !value.work_end) return false;
+      return timeStringToMinutes(value.work_start) < timeStringToMinutes(value.work_end);
+    },
+    {
+      message: "Provide a start and end time with the end after the start.",
+      path: ["work_end"],
+    },
+  );
 
 export async function GET(req: NextRequest) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
@@ -34,5 +47,6 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
+  await logSettingsChange(supabase, { userId: user.id, metadata: { changes: parsed.data } });
   return respond(data, { status: 201 });
 }
