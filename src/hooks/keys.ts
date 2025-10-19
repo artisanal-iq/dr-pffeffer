@@ -5,6 +5,7 @@ export const qk = {
     all: () => ["tasks"] as const,
     list: (params?: TaskListParamsNormalized | null) => ["tasks", "list", params ?? null] as const,
     detail: (id: string) => ["tasks", "detail", id] as const,
+    window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
   },
   journals: {
     all: () => ["journals"] as const,
@@ -21,10 +22,9 @@ export const qk = {
     list: (q?: string | null) => ["connections", q] as const,
     detail: (id: string) => ["connections", "detail", id] as const,
   },
-  tasks: {
-    all: () => ["tasks"] as const,
-    window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
-    detail: (id: string) => ["tasks", "detail", id] as const,
+  metrics: {
+    summary: () => ["metrics", "summary"] as const,
+    daily: (range?: { from?: string | null; to?: string | null }) => ["metrics", "daily", range ?? null] as const,
   },
   settings: {
     root: () => ["settings"] as const,
