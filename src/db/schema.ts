@@ -13,6 +13,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { JournalSummaryMetadata } from "@/types/models";
 
 export const taskStatusEnum = pgEnum("task_status", ["todo", "in_progress", "done"]);
 export const taskPriorityEnum = pgEnum("task_priority", ["low", "medium", "high"]);
@@ -65,6 +66,7 @@ export const journals = pgTable("journals", {
   userId: uuid("user_id").notNull(),
   entry: text("entry").notNull(),
   aiSummary: text("ai_summary"),
+  summaryMetadata: jsonb("summary_metadata").$type<JournalSummaryMetadata | null>(),
   date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

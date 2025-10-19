@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
+const summaryMetadataSchema = z.object({
+  tone: z.enum(["positive", "neutral", "negative"]),
+  confidence: z.enum(["low", "medium", "high"]),
+  influence: z.enum(["low", "medium", "high"]),
+  key_themes: z.array(z.string()),
+  behavior_cue: z.string(),
+  word_count: z.number().int().nonnegative(),
+  evidence: z.array(z.string()),
+  generated_at: z.string(),
+});
+
 const patchSchema = z.object({
   entry: z.string().max(8000).optional(),
-  aiSummary: z.string().optional().nullable(),
+  ai_summary: z.string().optional().nullable(),
+  summary_metadata: summaryMetadataSchema.optional().nullable(),
   date: z.string().min(10).max(10).optional(),
 });
 
