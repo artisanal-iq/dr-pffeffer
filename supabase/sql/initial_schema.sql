@@ -72,12 +72,27 @@
  );
  create index if not exists settings_user_id_idx on public.settings (user_id);
 
+-- Audit events
+create table if not exists public.audit_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid null,
+  event_type text not null,
+  description text null,
+  request_path text null,
+  ip_address text null,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists audit_events_user_id_idx on public.audit_events (user_id);
+create index if not exists audit_events_event_type_idx on public.audit_events (event_type);
+
  -- RLS
  alter table public.tasks enable row level security;
- alter table public.power_practices enable row level security;
- alter table public.journals enable row level security;
- alter table public.connections enable row level security;
- alter table public.settings enable row level security;
+alter table public.power_practices enable row level security;
+alter table public.journals enable row level security;
+alter table public.connections enable row level security;
+alter table public.settings enable row level security;
+alter table public.audit_events enable row level security;
 
  -- Policies template per table
 do $$
@@ -95,8 +110,93 @@ begin
     execute format('create policy %I on public.%I for insert with check (auth.uid() = user_id);', 'owner_insert', t);
     execute format('create policy %I on public.%I for update using (auth.uid() = user_id) with check (auth.uid() = user_id);', 'owner_update', t);
     execute format('create policy %I on public.%I for delete using (auth.uid() = user_id);', 'owner_delete', t);
-  end loop;
+ end loop;
 end $$;
+
+-- Audit helpers
+create or replace function public.log_audit_event(
+  event_type text,
+  user_id uuid default null,
+  description text default null,
+  request_path text default null,
+  ip_address text default null,
+  metadata jsonb default '{}'::jsonb
+)
+returns public.audit_events
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  inserted public.audit_events;
+begin
+  insert into public.audit_events (
+    user_id,
+    event_type,
+    description,
+    request_path,
+    ip_address,
+    metadata
+  )
+  values (
+    user_id,
+    event_type,
+    description,
+    request_path,
+    ip_address,
+    coalesce(metadata, '{}'::jsonb)
+  )
+  returning * into inserted;
+
+  return inserted;
+end;
+$$;
+
+create or replace function public.log_unauthorized_access(
+  request_path text,
+  ip_address text default null,
+  metadata jsonb default '{}'::jsonb
+)
+returns public.audit_events
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return public.log_audit_event(
+    event_type => 'auth.unauthorized',
+    user_id => null,
+    description => 'Unauthorized access attempt',
+    request_path => request_path,
+    ip_address => ip_address,
+    metadata => metadata
+  );
+end;
+$$;
+
+create or replace function public.log_settings_change(
+  user_id uuid,
+  metadata jsonb default '{}'::jsonb
+)
+returns public.audit_events
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return public.log_audit_event(
+    event_type => 'settings.updated',
+    user_id => user_id,
+    description => 'User settings updated',
+    request_path => '/settings',
+    metadata => metadata
+  );
+end;
+$$;
+
+grant execute on function public.log_audit_event(text, uuid, text, text, text, jsonb) to anon, authenticated;
+grant execute on function public.log_unauthorized_access(text, text, jsonb) to anon, authenticated;
+grant execute on function public.log_settings_change(uuid, jsonb) to anon, authenticated;
 
  -- updated_at triggers
  create or replace function public.set_updated_at()

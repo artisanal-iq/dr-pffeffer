@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+import { logSettingsChange } from "@/lib/audit";
 
 const upsertSchema = z.object({
   theme: z.string().max(20).optional().nullable(),
@@ -34,5 +35,6 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
+  await logSettingsChange(supabase, { userId: user.id, metadata: { changes: parsed.data } });
   return respond(data, { status: 201 });
 }
