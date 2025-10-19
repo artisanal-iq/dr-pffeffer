@@ -10,6 +10,13 @@ import {
   themeContrastOptions,
   themeModeOptions,
 } from "@/lib/profile-schema";
+import {
+  addNudgeScheduleTime,
+  removeNudgeScheduleTime,
+  toggleNudgeScheduleTime,
+  NudgeScheduleError,
+} from "@/lib/nudges/schedule";
+import type { NudgeScheduleEntry } from "@/types/models";
 
 function toNullable(value: string) {
   return value.trim() ? value.trim() : null;
@@ -20,6 +27,7 @@ export default function SettingsClient() {
   const profileMutation = useUpsertSettings();
   const notificationsMutation = useUpsertSettings();
   const aiMutation = useUpsertSettings();
+  const scheduleMutation = useUpsertSettings();
   const { theme, setTheme, isLoading: themeLoading } = useThemeSettings();
 
   const [selectedTheme, setSelectedTheme] = useState<ThemeName>("system");
@@ -37,9 +45,13 @@ export default function SettingsClient() {
   const [workEnd, setWorkEnd] = useState("");
   const [themeContrast, setThemeContrast] = useState("");
   const [accentColor, setAccentColor] = useState("");
+  const [nudgeSchedule, setNudgeSchedule] = useState<NudgeScheduleEntry[]>([]);
+  const [newNudgeTime, setNewNudgeTime] = useState("");
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) {
+      setNudgeSchedule([]);
       return;
     }
     setNotificationsEnabled(data.notifications ?? true);
@@ -49,6 +61,8 @@ export default function SettingsClient() {
     setWorkEnd(data.work_end ?? "");
     setThemeContrast(data.theme_contrast ?? "");
     setAccentColor(data.accent_color ?? "");
+    const schedule = Array.isArray(data.nudge_schedule) ? data.nudge_schedule : [];
+    setNudgeSchedule([...schedule].sort((a, b) => a.time.localeCompare(b.time)));
   }, [data]);
 
   useEffect(() => {
@@ -62,12 +76,14 @@ export default function SettingsClient() {
       themeSyncing ||
       profileMutation.isPending ||
       notificationsMutation.isPending ||
-      aiMutation.isPending,
+      aiMutation.isPending ||
+      scheduleMutation.isPending,
     [
       aiMutation.isPending,
       isLoading,
       notificationsMutation.isPending,
       profileMutation.isPending,
+      scheduleMutation.isPending,
       themeLoading,
       themeSyncing,
     ]
@@ -124,6 +140,59 @@ export default function SettingsClient() {
     });
   };
 
+  const updateNudgeSchedule = async (
+    updater: (current: NudgeScheduleEntry[]) => NudgeScheduleEntry[]
+  ) => {
+    setScheduleError(null);
+    const previous = nudgeSchedule.map((entry) => ({ ...entry }));
+    let next: NudgeScheduleEntry[];
+    try {
+      next = updater(previous);
+    } catch (error) {
+      if (error instanceof NudgeScheduleError) {
+        setScheduleError(error.message);
+      } else if (error instanceof Error) {
+        setScheduleError(error.message);
+      } else {
+        setScheduleError("Unable to update nudge schedule.");
+      }
+      return false;
+    }
+
+    setNudgeSchedule(next);
+    try {
+      await scheduleMutation.mutateAsync({ nudge_schedule: next });
+      return true;
+    } catch (error) {
+      console.error("Failed to save nudge schedule", error);
+      setScheduleError("Unable to save nudge schedule. Try again.");
+      setNudgeSchedule(previous);
+      return false;
+    }
+  };
+
+  const handleAddNudgeTime = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!newNudgeTime) {
+      setScheduleError("Choose a time to add.");
+      return;
+    }
+    const success = await updateNudgeSchedule((current) =>
+      addNudgeScheduleTime(current, newNudgeTime)
+    );
+    if (success) {
+      setNewNudgeTime("");
+    }
+  };
+
+  const handleToggleNudgeTime = async (time: string) => {
+    await updateNudgeSchedule((current) => toggleNudgeScheduleTime(current, time));
+  };
+
+  const handleRemoveNudgeTime = async (time: string) => {
+    await updateNudgeSchedule((current) => removeNudgeScheduleTime(current, time));
+  };
+
   return (
     <div className="mt-6 space-y-8 max-w-xl">
       <section className="space-y-2">
@@ -160,6 +229,68 @@ export default function SettingsClient() {
           <p className="text-xs text-muted-foreground">Saving notification preference…</p>
         ) : null}
         {notificationError ? <p className="text-sm text-red-500">{notificationError}</p> : null}
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-medium">Nudge schedule</h2>
+          <p className="text-xs text-muted-foreground">
+            Add the times you want to receive midday reminders.
+          </p>
+        </div>
+        <form className="flex flex-wrap gap-2" onSubmit={handleAddNudgeTime}>
+          <input
+            type="time"
+            value={newNudgeTime}
+            onChange={(event) => {
+              setScheduleError(null);
+              setNewNudgeTime(event.target.value);
+            }}
+            className="border rounded px-3 py-2 bg-transparent"
+            disabled={scheduleMutation.isPending}
+          />
+          <button
+            type="submit"
+            className="px-3 py-2 rounded bg-black text-white dark:bg-white dark:text-black disabled:opacity-50"
+            disabled={scheduleMutation.isPending}
+          >
+            {scheduleMutation.isPending ? "Saving…" : "Add time"}
+          </button>
+        </form>
+        {scheduleError ? <p className="text-sm text-red-500">{scheduleError}</p> : null}
+        <ul className="space-y-2">
+          {nudgeSchedule.length === 0 ? (
+            <li className="text-xs text-muted-foreground">No nudges scheduled yet.</li>
+          ) : (
+            nudgeSchedule.map((entry) => (
+              <li
+                key={entry.time}
+                className="flex items-center justify-between gap-3 border rounded px-3 py-2"
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={entry.enabled}
+                    onChange={() => handleToggleNudgeTime(entry.time)}
+                    disabled={scheduleMutation.isPending}
+                  />
+                  <span className="font-mono text-sm">{entry.time}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveNudgeTime(entry.time)}
+                  className="text-xs text-muted-foreground hover:text-red-500 disabled:opacity-50"
+                  disabled={scheduleMutation.isPending}
+                >
+                  Remove
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+        {scheduleMutation.isPending ? (
+          <p className="text-xs text-muted-foreground">Saving schedule…</p>
+        ) : null}
       </section>
 
       <form className="space-y-2" onSubmit={handleAiSubmit}>
