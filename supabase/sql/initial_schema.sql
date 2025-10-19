@@ -15,6 +15,7 @@ create table if not exists public.tasks (
   scheduled_time timestamptz null,
   context jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
+  completed_at timestamptz null,
   updated_at timestamptz not null default now()
 );
 create index if not exists tasks_user_id_idx on public.tasks (user_id);
@@ -74,6 +75,11 @@ begin
   update public.tasks set context = '{}'::jsonb where context is null;
   alter table public.tasks alter column context set default '{}'::jsonb;
   alter table public.tasks alter column context set not null;
+  alter table public.tasks add column if not exists completed_at timestamptz null;
+  update public.tasks
+    set completed_at = coalesce(completed_at, updated_at)
+    where status = 'done'
+      and completed_at is null;
 end;
 $$;
 
@@ -217,17 +223,17 @@ begin
   if (TG_OP = 'INSERT') then
     if new.status = 'done' then
       target_user := new.user_id;
-      target_date := coalesce(new.updated_at, now())::date;
+      target_date := coalesce(new.completed_at, new.updated_at, now())::date;
       delta := 1;
     end if;
   elsif (TG_OP = 'UPDATE') then
     if old.status <> 'done' and new.status = 'done' then
       target_user := new.user_id;
-      target_date := coalesce(new.updated_at, now())::date;
+      target_date := coalesce(new.completed_at, new.updated_at, now())::date;
       delta := 1;
     elsif old.status = 'done' and new.status <> 'done' then
       target_user := old.user_id;
-      target_date := coalesce(old.updated_at, now())::date;
+      target_date := coalesce(old.completed_at, old.updated_at, now())::date;
       delta := -1;
     else
       return new;
@@ -235,7 +241,7 @@ begin
   elsif (TG_OP = 'DELETE') then
     if old.status = 'done' then
       target_user := old.user_id;
-      target_date := coalesce(old.updated_at, now())::date;
+      target_date := coalesce(old.completed_at, old.updated_at, now())::date;
       delta := -1;
     end if;
   end if;
@@ -358,11 +364,34 @@ grant execute on function public.log_audit_event(text, uuid, text, text, text, j
 grant execute on function public.log_unauthorized_access(text, text, jsonb) to anon, authenticated;
 grant execute on function public.log_settings_change(uuid, jsonb) to anon, authenticated;
 
- -- updated_at triggers
+-- updated_at triggers
  create or replace function public.set_updated_at()
  returns trigger as $$
  begin
    new.updated_at = now();
+   return new;
+ end;
+ $$ language plpgsql;
+
+ create or replace function public.set_task_completed_at()
+ returns trigger as $$
+ begin
+   if (TG_OP = 'INSERT') then
+     if new.status = 'done' then
+       new.completed_at := coalesce(new.completed_at, now());
+     else
+       new.completed_at := null;
+     end if;
+     return new;
+   elsif (TG_OP = 'UPDATE') then
+     if new.status = 'done' then
+       new.completed_at := coalesce(new.completed_at, old.completed_at, now());
+     else
+       new.completed_at := null;
+     end if;
+     return new;
+   end if;
+
    return new;
  end;
  $$ language plpgsql;
@@ -374,6 +403,11 @@ grant execute on function public.log_settings_change(uuid, jsonb) to anon, authe
     execute format('create trigger %I before update on public.%I for each row execute function public.set_updated_at();', t || '_set_updated_at', t);
   end loop;
  end $$;
+
+drop trigger if exists tasks_set_completed_at on public.tasks;
+create trigger tasks_set_completed_at
+before insert or update on public.tasks
+for each row execute function public.set_task_completed_at();
 
 -- Task RPC helpers
 create or replace function public.list_tasks(
