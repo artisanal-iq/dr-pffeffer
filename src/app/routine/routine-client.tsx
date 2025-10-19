@@ -316,7 +316,7 @@ export function DailyRoutineClient() {
       </section>
 
       {errorMessage ? <p className="text-sm text-red-500">{errorMessage}</p> : null}
-      {practicesQuery.isLoading && <p className="text-sm text-muted-foreground">Loading today's practice…</p>}
+      {practicesQuery.isLoading && <p className="text-sm text-muted-foreground">Loading today’s practice…</p>}
     </div>
   );
 }

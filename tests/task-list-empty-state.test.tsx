@@ -17,7 +17,7 @@ const createMockResult = () =>
     error: null,
   });
 
-const mockUseTasks = vi.fn<unknown, [UseTasksParams]>(() => createMockResult());
+const mockUseTasks = vi.fn(() => createMockResult());
 
 vi.mock("@/hooks/tasks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/hooks/tasks")>();

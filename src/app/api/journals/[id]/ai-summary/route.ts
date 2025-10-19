@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateRuleBasedSummary, SummaryGenerationError } from "@/lib/journal-summary";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
-export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, context: { params: { id: string } }) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
@@ -10,13 +10,12 @@ export async function POST(req: NextRequest, context: { params: Promise<{ id: st
   } = await supabase.auth.getUser();
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
 
-  const { id } = await context.params;
-  try {
-    const {
-      data: journal,
-      error: jerr,
-    } = await supabase.from("journals").select("id, entry").eq("user_id", user.id).eq("id", id).single();
-    if (jerr || !journal) return respond({ error: { code: "not_found", message: jerr?.message ?? "Not found" } }, { status: 404 });
+  const { id } = context.params;
+  const {
+    data: journal,
+    error: jerr,
+  } = await supabase.from("journals").select("id, entry").eq("user_id", user.id).eq("id", id).single();
+  if (jerr || !journal) return respond({ error: { code: "not_found", message: jerr?.message ?? "Not found" } }, { status: 404 });
 
   try {
     const { summary, metadata } = generateRuleBasedSummary(journal.entry);
