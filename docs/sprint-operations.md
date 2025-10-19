@@ -12,6 +12,7 @@ To keep the sprint board resilient when unexpected issues appear, follow these g
 - Whenever a new defect is discovered mid-sprint, create a **child task linked to the buffer item**.
 - Capture reproduction steps, severity, and expected fix scope in the child ticket to improve estimation accuracy.
 - Update the buffer’s remaining points as fixes are completed so remaining headroom is visible.
+- Journal bugs should note whether they originated in production or staging so the triage review can prioritize the highest-impact work.
 
 ## 3. Monitor Burn-Down Daily
 - Review the sprint burn-down chart each day to confirm the buffer is still intact or consciously consumed.
