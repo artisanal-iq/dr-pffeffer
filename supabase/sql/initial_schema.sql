@@ -67,6 +67,11 @@
    theme text null,
    notifications boolean not null default true,
    ai_persona text null,
+   persona text null,
+   work_start time null,
+   work_end time null,
+   theme_contrast text null,
+   accent_color text null,
    created_at timestamptz not null default now(),
    updated_at timestamptz not null default now()
  );

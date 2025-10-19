@@ -14,8 +14,21 @@ export function useSettings() {
 export function useUpsertSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: Partial<Pick<Settings, "theme" | "notifications" | "ai_persona">>) =>
-      apiFetch<Settings>(`/api/settings`, { method: "POST", body: JSON.stringify(input) }),
+    mutationFn: (
+      input: Partial<
+        Pick<
+          Settings,
+          | "theme"
+          | "notifications"
+          | "ai_persona"
+          | "persona"
+          | "work_start"
+          | "work_end"
+          | "theme_contrast"
+          | "accent_color"
+        >
+      >,
+    ) => apiFetch<Settings>(`/api/settings`, { method: "POST", body: JSON.stringify(input) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.settings.root() });
     },
