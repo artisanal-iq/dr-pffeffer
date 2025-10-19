@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
-type AnySupabaseClient = SupabaseClient<unknown, "public", unknown>;
+type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 function toSafeJson(metadata?: JsonRecord | null) {
   return metadata ? JSON.parse(JSON.stringify(metadata)) : {};

@@ -205,9 +205,9 @@ function SortButton({
 export default function TaskList() {
   const [state, setState] = useState<TaskListState>(initialState);
   const { data, isLoading, isError, error } = useTasks({
-    status: state.status === "all" ? null : state.status,
-    from: state.from ? new Date(`${state.from}T00:00:00`).toISOString() : null,
-    to: state.to ? new Date(`${state.to}T23:59:59.999`).toISOString() : null,
+    status: state.status === "all" ? undefined : state.status,
+    from: state.from ? new Date(`${state.from}T00:00:00`).toISOString() : undefined,
+    to: state.to ? new Date(`${state.to}T23:59:59.999`).toISOString() : undefined,
   });
 
   const filteredTasks = useMemo(() => {
