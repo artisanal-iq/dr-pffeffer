@@ -1,0 +1,46 @@
+name: Lockfile Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ensure-lockfile-updated:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if package.json changed without pnpm-lock.yaml
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+
+          echo "Base SHA: $BASE_SHA"
+          echo "Head SHA: $HEAD_SHA"
+
+          changed_files=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA")
+          echo "Changed files:\n$changed_files"
+
+          pkg_changed=false
+          lock_changed=false
+
+          if echo "$changed_files" | grep -qE '^package.json$'; then
+            pkg_changed=true
+          fi
+
+          if echo "$changed_files" | grep -qE '^pnpm-lock.yaml$'; then
+            lock_changed=true
+          fi
+
+          if [[ "$pkg_changed" == true && "$lock_changed" == false ]]; then
+            echo "ERROR: package.json changed but pnpm-lock.yaml was not updated. Run: pnpm install"
+            exit 1
+          fi
+
+          echo "Lockfile Guard passed."
