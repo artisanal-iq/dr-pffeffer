@@ -1,14 +1,27 @@
-import { pgTable, uuid, text, timestamp, varchar, integer, boolean, time } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  time,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+
+export const taskStatusEnum = pgEnum("task_status", ["todo", "in_progress", "done"]);
+export const taskPriorityEnum = pgEnum("task_priority", ["low", "medium", "high"]);
 
 export const tasks = pgTable("tasks", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").notNull(),
   title: text("title").notNull(),
-  status: varchar("status", { length: 32 }).notNull(), // todo | in_progress | done
-  priority: varchar("priority", { length: 16 }).notNull(), // low | medium | high
+  status: taskStatusEnum("status").notNull().default("todo"),
+  priority: taskPriorityEnum("priority").notNull().default("medium"),
   scheduledTime: timestamp("scheduled_time", { withTimezone: true }),
-  durationMinutes: integer("duration_minutes").notNull().default(30),
-  context: text("context"),
+  context: jsonb("context").$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

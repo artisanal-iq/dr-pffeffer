@@ -1,4 +1,11 @@
- export const qk = {
+import type { TaskListParamsNormalized } from "@/types/models";
+
+export const qk = {
+  tasks: {
+    all: () => ["tasks"] as const,
+    list: (params?: TaskListParamsNormalized | null) => ["tasks", "list", params ?? null] as const,
+    detail: (id: string) => ["tasks", "detail", id] as const,
+  },
   journals: {
     all: () => ["journals"] as const,
     list: (params?: { from?: string; to?: string }) => ["journals", params] as const,

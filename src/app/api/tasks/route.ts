@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
-
-const createTaskSchema = z.object({
-  title: z.string().min(1).max(200),
-  status: z.enum(["todo", "in_progress", "done"]).default("todo"),
-  priority: z.enum(["low", "medium", "high"]).default("medium"),
-  scheduledTime: z.string().datetime().optional().nullable(),
-  durationMinutes: z.number().int().min(15).max(24 * 60).optional(),
-  context: z.string().optional().nullable(),
-});
+import { taskCreateSchema, taskListQuerySchema } from "@/lib/validation/tasks";
+import type { TaskListResponse } from "@/types/models";
 
 export async function GET(req: NextRequest) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
@@ -25,23 +17,38 @@ export async function GET(req: NextRequest) {
   }
 
   const search = req.nextUrl.searchParams;
-  const status = search.get("status");
-  const from = search.get("from");
-  const to = search.get("to");
-  const limit = Number(search.get("limit") ?? 50);
-  const offset = Number(search.get("offset") ?? 0);
+  const parsed = taskListQuerySchema.safeParse({
+    status: search.get("status"),
+    priority: search.get("priority"),
+    from: search.get("from") || undefined,
+    to: search.get("to") || undefined,
+    limit: search.get("limit") ?? undefined,
+    offset: search.get("offset") ?? undefined,
+  });
 
-  let query = supabase.from("tasks").select("*", { count: "exact" }).eq("user_id", user.id).order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+  if (!parsed.success) {
+    return respond(
+      { error: { code: "invalid_query", message: parsed.error.message } },
+      { status: 400 }
+    );
+  }
 
-  if (status) query = query.eq("status", status);
-  if (from) query = query.gte("scheduled_time", from);
-  if (to) query = query.lte("scheduled_time", to);
+  const filters = parsed.data;
+  const { data, error } = await supabase.rpc("list_tasks", {
+    p_status: filters.status ?? null,
+    p_priority: filters.priority ?? null,
+    p_from: filters.from ?? null,
+    p_to: filters.to ?? null,
+    p_limit: filters.limit,
+    p_offset: filters.offset,
+  });
 
-  const { data, error, count } = await query;
   if (error) {
     return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
   }
-  return respond({ items: data, count });
+
+  const payload: TaskListResponse = data ?? { items: [], count: 0 };
+  return respond(payload);
 }
 
 export async function POST(req: NextRequest) {
@@ -58,7 +65,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const parsed = createTaskSchema.safeParse(body);
+  const parsed = taskCreateSchema.safeParse(body);
   if (!parsed.success) {
     return respond(
       { error: { code: "invalid_body", message: parsed.error.message } },
@@ -66,19 +73,13 @@ export async function POST(req: NextRequest) {
     );
   }
   const payload = parsed.data;
-  const { data, error } = await supabase
-    .from("tasks")
-    .insert({
-      user_id: user.id,
-      title: payload.title,
-      status: payload.status,
-      priority: payload.priority,
-      scheduled_time: payload.scheduledTime ?? null,
-      duration_minutes: payload.durationMinutes ?? 30,
-      context: payload.context ?? null,
-    })
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc("create_task", {
+    p_title: payload.title,
+    p_status: payload.status,
+    p_priority: payload.priority,
+    p_scheduled_time: payload.scheduledTime ?? null,
+    p_context: payload.context ?? {},
+  });
 
   if (error) {
     return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
