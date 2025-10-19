@@ -7,6 +7,7 @@ export type Task = {
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high';
   scheduled_time: string | null; // ISO
+  duration_minutes: number;
   context: string | null;
   created_at: string;
   updated_at: string;

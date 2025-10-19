@@ -7,6 +7,7 @@ export const tasks = pgTable("tasks", {
   status: varchar("status", { length: 32 }).notNull(), // todo | in_progress | done
   priority: varchar("priority", { length: 16 }).notNull(), // low | medium | high
   scheduledTime: timestamp("scheduled_time", { withTimezone: true }),
+  durationMinutes: integer("duration_minutes").notNull().default(30),
   context: text("context"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

@@ -8,8 +8,9 @@
    title text not null,
    status text not null check (status in ('todo','in_progress','done')),
    priority text not null check (priority in ('low','medium','high')),
-   scheduled_time timestamptz null,
-   context text null,
+  scheduled_time timestamptz null,
+  duration_minutes int not null default 30 check (duration_minutes > 0),
+  context text null,
    created_at timestamptz not null default now(),
    updated_at timestamptz not null default now()
  );

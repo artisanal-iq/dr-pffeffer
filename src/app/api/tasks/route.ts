@@ -7,6 +7,7 @@ const createTaskSchema = z.object({
   status: z.enum(["todo", "in_progress", "done"]).default("todo"),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   scheduledTime: z.string().datetime().optional().nullable(),
+  durationMinutes: z.number().int().min(15).max(24 * 60).optional(),
   context: z.string().optional().nullable(),
 });
 
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
       status: payload.status,
       priority: payload.priority,
       scheduled_time: payload.scheduledTime ?? null,
+      duration_minutes: payload.durationMinutes ?? 30,
       context: payload.context ?? null,
     })
     .select()

@@ -14,7 +14,12 @@
     list: (q?: string | null) => ["connections", q] as const,
     detail: (id: string) => ["connections", "detail", id] as const,
   },
+  tasks: {
+    all: () => ["tasks"] as const,
+    window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
+    detail: (id: string) => ["tasks", "detail", id] as const,
+  },
   settings: {
     root: () => ["settings"] as const,
   },
- };
+};
