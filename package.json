@@ -44,5 +44,12 @@
     "typescript": "^5",
     "@playwright/test": "^1.49.1",
     "vitest": "^2.1.4"
+  },
+  "pnpm": {
+    "allowedBuiltDependencies": [
+      "@tailwindcss/node",
+      "lightningcss",
+      "esbuild"
+    ]
   }
 }
