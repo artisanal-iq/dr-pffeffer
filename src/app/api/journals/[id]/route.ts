@@ -21,14 +21,14 @@ const patchSchema = z.object({
   date: z.string().min(10).max(10).optional(),
 });
 
-export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
-  const { id } = await context.params;
+  const { id } = context.params;
   const { data, error } = await supabase
     .from("journals")
     .select("*")
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ id: str
   }
 }
 
-export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   const body = await req.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return respond({ error: { code: "invalid_body", message: parsed.error.message } }, { status: 400 });
-  const { id } = await context.params;
+  const { id } = context.params;
   try {
     const patch: Record<string, unknown> = {};
     if (parsed.data.entry !== undefined) {
@@ -84,14 +84,14 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
   }
 }
 
-export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
-  const { id } = await context.params;
+  const { id } = context.params;
   const { error } = await supabase.from("journals").delete().eq("user_id", user.id).eq("id", id);
   if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
   return respond({ ok: true });
