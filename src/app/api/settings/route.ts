@@ -47,5 +47,6 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
+  await logSettingsChange(supabase, { userId: user.id, metadata: { changes: parsed.data } });
   return respond(data, { status: 201 });
 }
