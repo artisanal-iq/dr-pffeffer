@@ -1,17 +1,25 @@
+import { Suspense } from "react";
+
 import { requireUser } from "@/lib/auth";
 import { observeDashboardRoute } from "@/lib/observability";
 
-export default async function DashboardPage() {
-  return observeDashboardRoute(async () => {
-    await requireUser("/dashboard");
+import DashboardContent from "./dashboard-content";
+import { DashboardSkeleton } from "./dashboard-skeleton";
 
-    return (
-      <main className="p-8">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Daily power score, consistency heatmap, and quick actions will appear here.
+export default async function DashboardPage() {
+  const user = await requireUser("/dashboard");
+
+  return (
+    <main className="space-y-10">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Track completions, spot consistency trends, and jump into your next action.
         </p>
-      </main>
-    );
-  });
+      </div>
+      <Suspense fallback={<DashboardSkeleton />}>
+        <DashboardContent userId={user.id} />
+      </Suspense>
+    </main>
+  );
 }

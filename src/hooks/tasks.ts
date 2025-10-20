@@ -21,7 +21,9 @@ import type {
 } from "@/types/models";
 import { qk } from "./keys";
 
-const DEFAULT_LIMIT = 50;
+export type { TaskListResponse } from "@/types/models";
+
+const DEFAULT_LIMIT = 200;
 const DEFAULT_OFFSET = 0;
 
 type TaskCacheSnapshot = Array<[QueryKey, unknown]>;
@@ -47,6 +49,7 @@ export type TaskPatchInput = {
   status?: TaskStatus;
   priority?: TaskPriority;
   scheduledTime?: string | null;
+  durationMinutes?: number;
   context?: TaskContext;
 };
 
@@ -68,6 +71,48 @@ export function useTasks(params?: TaskListParams) {
     queryKey: qk.tasks.list(keyParams),
     queryFn: () =>
       apiFetch<TaskListResponse>(`/api/tasks${search.toString() ? `?${search.toString()}` : ""}`),
+  });
+}
+
+export type TaskFilters = {
+  status: TaskStatus | null;
+  priority: TaskPriority | null;
+  from: string | null;
+  to: string | null;
+  limit: number;
+  offset: number;
+};
+
+export function normalizeTaskFilters(filters?: Partial<TaskFilters>): TaskFilters {
+  return {
+    status: filters?.status ?? null,
+    priority: filters?.priority ?? null,
+    from: filters?.from ?? null,
+    to: filters?.to ?? null,
+    limit: filters?.limit ?? DEFAULT_LIMIT,
+    offset: filters?.offset ?? DEFAULT_OFFSET,
+  };
+}
+
+export function serializeTaskFilters(filters?: Partial<TaskFilters>): string {
+  const normalized = normalizeTaskFilters(filters);
+  const params = new URLSearchParams();
+  if (normalized.status) params.set("status", normalized.status);
+  if (normalized.priority) params.set("priority", normalized.priority);
+  if (normalized.from) params.set("from", normalized.from);
+  if (normalized.to) params.set("to", normalized.to);
+  params.set("limit", normalized.limit.toString());
+  params.set("offset", normalized.offset.toString());
+  return params.toString();
+}
+
+export type TaskWindowParams = { from: string; to: string; limit?: number };
+
+export function useTasksWindow(range: TaskWindowParams) {
+  return useTasks({
+    from: range.from,
+    to: range.to,
+    limit: range.limit,
   });
 }
 
@@ -107,6 +152,7 @@ export function createCreateTaskMutationOptions(qc: QueryClient): UseMutationOpt
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -150,6 +196,7 @@ export function createUpdateTaskMutationOptions(
         qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
       }
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -181,6 +228,7 @@ export function createDeleteTaskMutationOptions(
         qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
       }
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -195,19 +243,69 @@ export function useUpdateTask() {
   return useMutation(createUpdateTaskMutationOptions(qc));
 }
 
+export type UpdateTaskScheduleInput = {
+  id: string;
+  scheduledTime: string | null;
+  durationMinutes?: number;
+};
+
+export function useUpdateTaskSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, scheduledTime, durationMinutes }: UpdateTaskScheduleInput) =>
+      apiFetch<Task>(`/api/tasks/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          scheduledTime,
+          ...(durationMinutes !== undefined ? { durationMinutes } : {}),
+        }),
+      }),
+    onMutate: async ({ id, scheduledTime, durationMinutes }) => {
+      await qc.cancelQueries({ queryKey: qk.tasks.all() });
+      const snapshot = snapshotTasks(qc);
+      const previousTask = findTaskInSnapshot(snapshot, id);
+      if (previousTask) {
+        const optimisticTask: Task = {
+          ...previousTask,
+          scheduled_time: scheduledTime ?? null,
+          duration_minutes:
+            durationMinutes ?? previousTask.duration_minutes,
+        };
+        applyTaskToCaches(qc, optimisticTask);
+      }
+      return { snapshot, previousTask } satisfies TaskUpdateContext;
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.snapshot) {
+        restoreSnapshot(qc, context.snapshot);
+      }
+    },
+    onSuccess: (task) => {
+      applyTaskToCaches(qc, task);
+    },
+    onSettled: (_data, _error, variables) => {
+      if (variables?.id) {
+        qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
+      }
+      qc.invalidateQueries({ queryKey: qk.tasks.all() });
+    },
+  });
+}
+
 export function useDeleteTask() {
   const qc = useQueryClient();
   return useMutation(createDeleteTaskMutationOptions(qc));
 }
 
 function normalizeTaskListParams(params?: TaskListParams): TaskListParamsNormalized {
+  const normalized = normalizeTaskFilters(params);
   return {
-    status: params?.status ?? undefined,
-    priority: params?.priority ?? undefined,
-    from: params?.from ?? undefined,
-    to: params?.to ?? undefined,
-    limit: params?.limit ?? DEFAULT_LIMIT,
-    offset: params?.offset ?? DEFAULT_OFFSET,
+    status: normalized.status ?? undefined,
+    priority: normalized.priority ?? undefined,
+    from: normalized.from ?? undefined,
+    to: normalized.to ?? undefined,
+    limit: normalized.limit,
+    offset: normalized.offset,
   };
 }
 

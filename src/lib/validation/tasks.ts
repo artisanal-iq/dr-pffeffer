@@ -23,6 +23,7 @@ export const taskUpdateSchema = z
     status: taskStatusSchema.optional(),
     priority: taskPrioritySchema.optional(),
     scheduledTime: z.string().datetime().optional().nullable(),
+    durationMinutes: z.number().int().min(1).max(24 * 60).optional(),
     context: taskContextSchema.optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
@@ -34,12 +35,14 @@ export const taskUpdateSchema = z
       status?: z.infer<typeof taskStatusSchema>;
       priority?: z.infer<typeof taskPrioritySchema>;
       scheduledTime?: string | null;
+      durationMinutes?: number;
       context?: Record<string, unknown>;
     } = {};
     if (value.title !== undefined) next.title = value.title;
     if (value.status !== undefined) next.status = value.status;
     if (value.priority !== undefined) next.priority = value.priority;
     if (value.scheduledTime !== undefined) next.scheduledTime = value.scheduledTime;
+    if (value.durationMinutes !== undefined) next.durationMinutes = value.durationMinutes;
     if (value.context !== undefined) next.context = value.context ?? {};
     return next;
   });
