@@ -18,7 +18,9 @@ export const qk = {
         offset?: number;
       } | null,
     ) => ["journals", "list", params ?? null] as const,
-    infinite: (params?: { from?: string; to?: string; tags?: string[] }) => ["journals", "infinite", params] as const,
+    infinite: (
+      params?: { from?: string; to?: string; tags?: readonly string[]; limit?: number } | null,
+    ) => ["journals", "infinite", params ?? null] as const,
     detail: (id: string) => ["journals", "detail", id] as const,
   },
   powerPractices: {

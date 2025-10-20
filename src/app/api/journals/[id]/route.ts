@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { decryptJournalRow, encryptString } from "@/lib/encryption";
+import { tagSchema } from "@/lib/journal-schemas";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
 const summaryMetadataSchema = z.object({
@@ -68,6 +69,9 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
     }
     if (parsed.data.date !== undefined) {
       patch.date = parsed.data.date;
+    }
+    if (parsed.data.tags !== undefined) {
+      patch.tags = parsed.data.tags;
     }
     const { data, error } = await supabase
       .from("journals")

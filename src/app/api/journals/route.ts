@@ -2,13 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { decryptJournalRow, encryptString } from "@/lib/encryption";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
-
-const tagSchema = z
-  .string()
-  .min(1)
-  .max(32)
-  .transform((value) => value.trim())
-  .refine((value) => value.length > 0, { message: "Tag cannot be blank" });
+import { tagSchema } from "@/lib/journal-schemas";
 
 const createSchema = z.object({
   entry: z.string().min(1).max(8000),
