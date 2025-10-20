@@ -4,6 +4,7 @@ export const qk = {
   tasks: {
     all: () => ["tasks"] as const,
     list: (params?: TaskListParamsNormalized | null) => ["tasks", "list", params ?? null] as const,
+    window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
     detail: (id: string) => ["tasks", "detail", id] as const,
     window: (range: { from: string; to: string }) => ["tasks", "window", range] as const,
   },
@@ -31,4 +32,4 @@ export const qk = {
   settings: {
     root: () => ["settings"] as const,
   },
-};
+} as const;

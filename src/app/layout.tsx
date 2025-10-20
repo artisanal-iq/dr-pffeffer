@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import "./globals.css";
 import Providers from "./providers";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Power Practice Planner",
@@ -13,10 +14,13 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="en">
       <body className="antialiased">
@@ -39,8 +43,13 @@ export default async function RootLayout({
           </nav>
         </header>
         <Providers>
-          <div className="mx-auto max-w-5xl px-6">
-            {children}
+          <div className="flex min-h-screen flex-col bg-background">
+            <AppHeader user={user ?? null} />
+            <main className="flex-1">
+              <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+                {children}
+              </div>
+            </main>
           </div>
         </Providers>
       </body>
