@@ -10,7 +10,8 @@ export const qk = {
   },
   journals: {
     all: () => ["journals"] as const,
-    list: (params?: { from?: string; to?: string }) => ["journals", params] as const,
+    list: (params?: { from?: string; to?: string; tags?: string[] }) => ["journals", "list", params] as const,
+    infinite: (params?: { from?: string; to?: string; tags?: string[] }) => ["journals", "infinite", params] as const,
     detail: (id: string) => ["journals", "detail", id] as const,
   },
   powerPractices: {

@@ -25,12 +25,30 @@ type CreateJournalInput = { entry: string; date: string };
 
 type UpdateJournalInput = Partial<Pick<Journal, "entry" | "ai_summary" | "date">>;
 
-export function useJournals(params?: { from?: string; to?: string; limit?: number; offset?: number }) {
+type JournalQueryParams = {
+  from?: string;
+  to?: string;
+  tags?: string[];
+  limit?: number;
+  offset?: number;
+};
+
+export function serializeJournalParams(params?: JournalQueryParams) {
   const search = new URLSearchParams();
   if (params?.from) search.set("from", params.from);
   if (params?.to) search.set("to", params.to);
+  if (params?.tags && params.tags.length > 0) {
+    for (const tag of params.tags) {
+      search.append("tags", tag);
+    }
+  }
   if (params?.limit) search.set("limit", String(params.limit));
   if (params?.offset) search.set("offset", String(params.offset));
+  return search;
+}
+
+export function useJournals(params?: JournalQueryParams) {
+  const serialized = serializeJournalParams(params);
   return useQuery({
     queryKey: qk.journals.list({ from: params?.from, to: params?.to }),
     queryFn: () => apiFetch<JournalListResponse>(`/api/journals${search.toString() ? `?${search}` : ""}`),

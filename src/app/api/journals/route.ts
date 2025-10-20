@@ -3,9 +3,17 @@ import { z } from "zod";
 import { decryptJournalRow, encryptString } from "@/lib/encryption";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
+const tagSchema = z
+  .string()
+  .min(1)
+  .max(32)
+  .transform((value) => value.trim())
+  .refine((value) => value.length > 0, { message: "Tag cannot be blank" });
+
 const createSchema = z.object({
   entry: z.string().min(1).max(8000),
   date: z.string().min(10).max(10),
+  tags: z.array(tagSchema).max(12).default([]),
 });
 
 export async function GET(req: NextRequest) {
@@ -21,6 +29,11 @@ export async function GET(req: NextRequest) {
   const to = search.get("to");
   const limit = Number(search.get("limit") ?? 50);
   const offset = Number(search.get("offset") ?? 0);
+  const tags = search
+    .getAll("tags")
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 
   let q = supabase
     .from("journals")
@@ -30,6 +43,7 @@ export async function GET(req: NextRequest) {
     .range(offset, offset + limit - 1);
   if (from) q = q.gte("date", from);
   if (to) q = q.lte("date", to);
+  if (tags.length) q = q.contains("tags", tags);
 
   const { data, error, count } = await q;
   if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });

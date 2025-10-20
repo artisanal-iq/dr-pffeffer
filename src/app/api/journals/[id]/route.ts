@@ -19,6 +19,7 @@ const patchSchema = z.object({
   ai_summary: z.string().optional().nullable(),
   summary_metadata: summaryMetadataSchema.optional().nullable(),
   date: z.string().min(10).max(10).optional(),
+  tags: z.array(tagSchema).max(12).optional(),
 });
 
 export async function GET(req: NextRequest, context: { params: { id: string } }) {
