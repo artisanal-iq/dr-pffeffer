@@ -46,19 +46,20 @@
 **Epic Statement:** As a power-building professional, I want to organize and schedule my tasks so that my day reflects my strategic priorities.
 
 **Scope & Boundaries**
-- **In Scope:** Task CRUD, contexts, priorities, statuses, manual scheduling UI, calendar view, Supabase persistence, Drizzle models, basic power score inputs.
+- **In Scope:** Task CRUD, contexts, priorities, statuses, manual scheduling UI (list view), calendar view (pending; tracked separately), Supabase persistence, Drizzle models, basic power score inputs.
 - **Out of Scope:** Automated auto-plan algorithm (covered in Epic 7), external calendar sync (Epic 9), complex recurring tasks.
 
 **Acceptance Criteria**
 1. Users can create, edit, complete, archive, and delete tasks with priority and context metadata.
-2. Planner calendar shows daily/weekly view with drag-and-drop manual scheduling.
+2. Planner list view supports manual scheduling and status updates. Calendar and drag-and-drop scheduling remain outstanding (see Story PPLN-203).
 3. Tasks persist to Supabase via Drizzle models with optimistic UI updates.
 4. Completed tasks feed dashboard metrics and power score calculations.
 5. Timezone-aware scheduling ensures consistency for users globally.
 
 **High-Level User Stories**
 - Build task list view with filters for context, priority, and status.
-- Implement planner calendar with drag-and-drop scheduling interactions.
+- Implement planner calendar with drag-and-drop scheduling interactions. *(Outstanding – Story PPLN-203 targeted for next sprint).* 
+- **Story PPLN-203 (Pending):** Build calendar scheduling UI with drag-and-drop and multi-day views to ship post-list view release.
 - Create Drizzle schema & Supabase procedures for tasks including indexes.
 - Integrate React Query mutations with optimistic updates and error handling.
 
@@ -170,13 +171,13 @@
 **Epic Statement:** As a results-oriented practitioner, I want a dashboard summarizing my progress so that I can adjust my behavior intentionally.
 
 **Scope & Boundaries**
-- **In Scope:** Dashboard layout, daily power score prototype, calendar heatmap, quick-add shortcuts, integration with tasks/practices/journals, baseline charts.
-- **Out of Scope:** Advanced analytics (Epic 8), AI insights (Epic 7), cohort comparisons (Epic 8).
+- **In Scope:** Dashboard layout, daily power score prototype, calendar heatmap, quick navigation shortcuts to existing task/practice/journal creation flows, baseline charts.
+- **Out of Scope:** Advanced analytics (Epic 8), AI insights (Epic 7), cohort comparisons (Epic 8), inline quick-add modals until supporting components exist.
 
 **Acceptance Criteria**
 1. Dashboard aggregates tasks completed, reflections logged, confidence trend to produce daily power score.
 2. Calendar heatmap displays consistency streaks for tasks/practices.
-3. Quick-add buttons allow inline capture for tasks, journals, and connections.
+3. Dashboard quick navigation buttons link to existing task, journal, and relationship creation experiences (inline quick-add modals deferred to backlog).
 4. Dashboard modules responsive across desktop/tablet/mobile breakpoints.
 5. Performance benchmarks meet <1.5s data load after authentication.
 
@@ -184,7 +185,7 @@
 - Implement dashboard shell using shadcn/ui components and responsive grid.
 - Build power score calculation service combining key metrics.
 - Add calendar heatmap visualization with tooltip details.
-- Integrate quick-add modals for tasks, journal, and connections.
+- Wire dashboard quick navigation buttons to existing creation pages for tasks, journal entries, and relationships.
 
 **Epic Estimate:** 75 story points.
 
@@ -212,8 +213,8 @@
 **Epic Statement:** As an ambitious connector, I want to capture who I’m building relationships with so that I can return later to deepen those connections.
 
 **Scope & Boundaries**
-- **In Scope:** Create/read/delete contact records storing name and optional organization, searchable list view, quick-add modal on the connections page, Supabase persistence aligned with existing CRUD APIs.
-- **Out of Scope:** Follow-up reminders, tagging/categorization, notes/next actions UI, planner/dashboard integration, and automated nudges (moved to backlog for a future release).
+- **In Scope:** Contacts CRUD, tagging/categorization, follow-up reminders, notes, integration with dashboard quick navigation shortcuts, basic reporting.
+- **Out of Scope:** Influence map visualization (Epic 8), AI follow-up recommendations (Epic 8), external contact imports.
 
 **Acceptance Criteria**
 1. Users can add a connection with required name and optional organization via the connections quick-add modal.

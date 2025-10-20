@@ -13,11 +13,11 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 **Capabilities & Complexity**
 | Capability | Description | Complexity |
 | --- | --- | --- |
-| Task + Planner CRUD | Tasks with contexts, priorities, scheduling, Supabase sync, calendar view (manual). | M |
+| Task + Planner CRUD | Tasks with contexts, priorities, list-based scheduling, Supabase sync. Calendar UI pending. | M |
 | Power Practice Routine | Morning focus prompt selection, midday nudges (manual scheduler), end-of-day rating capture. | M |
 | Influence Journal | Text entry capture for journals (speech-to-text deferred to future milestone), AI summary placeholder (rule-based). | S |
 | Relationship Tracker | Contact management with reminders, basic tagging. | M |
-| Dashboard Foundations | Power score calculation (rule-based), calendar heatmap, quick-add buttons. | M |
+| Dashboard Foundations | Power score calculation (rule-based), calendar heatmap, quick navigation links to creation flows (inline quick-add deferred). | M |
 | Auth & Settings | Supabase Auth, profile settings, notification preferences. | S |
 
 **Dependencies**
@@ -32,6 +32,7 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 **Deliverables**
 - Production-ready Next.js app with Supabase backend.
 - Internal beta launch with manual AI prompts.
+- Dashboard quick navigation buttons linking to existing task, journal, and relationship creation flows (inline quick-add modals slated for future iteration).
 
 **Resource Estimate**
 - 2 Full-stack engineers, 1 Product Designer, 0.5 AI/Prompt Engineer (shared).
@@ -153,6 +154,9 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 - **Power Score Formula**: Define exact weighting and data inputs for Phase 1 vs. Phase 3 upgrade.
 - **Security Baselines**: Confirm compliance targets (SOC2, GDPR) and encryption requirements for journals.
 - **Auto-Plan Constraints**: Need explicit user-configurable working hours, calendar sources, and conflict resolution rules.
+
+## Backlog Candidates
+- Inline quick-add modals on the dashboard that allow creating tasks, journal entries, or relationship updates without leaving the page once supporting components and data flows exist.
 
 ## Appendix: Capability Complexity Summary
 | Theme | Capabilities | Complexity |
