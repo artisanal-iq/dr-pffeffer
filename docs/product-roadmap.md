@@ -15,7 +15,7 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 | --- | --- | --- |
 | Task + Planner CRUD | Tasks with contexts, priorities, scheduling, Supabase sync, calendar view (manual). | M |
 | Power Practice Routine | Morning focus prompt selection, midday nudges (manual scheduler), end-of-day rating capture. | M |
-| Influence Journal | Text/voice entry capture (voice-to-text via browser), AI summary placeholder (rule-based). | S |
+| Influence Journal | Text entry capture for journals (speech-to-text deferred to future milestone), AI summary placeholder (rule-based). | S |
 | Relationship Tracker | Contact management with reminders, basic tagging. | M |
 | Dashboard Foundations | Power score calculation (rule-based), calendar heatmap, quick-add buttons. | M |
 | Auth & Settings | Supabase Auth, profile settings, notification preferences. | S |
@@ -148,7 +148,7 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 - **Product/Operations**: 1 product manager throughout; add customer success contractor in Q3 to manage beta cohort feedback.
 
 ## Missing Requirements & Clarifications Needed
-- **Voice Entry Scope**: Clarify whether native speech-to-text must be built or if third-party browser APIs suffice for MVP.
+- **Voice Entry Scope**: MVP committed to text-only journal capture; plan future speech-to-text milestone (third-party/browser API evaluation still needed).
 - **Notification Channels**: Need decision on in-app vs. email/SMS nudges to finalize infrastructure.
 - **Power Score Formula**: Define exact weighting and data inputs for Phase 1 vs. Phase 3 upgrade.
 - **Security Baselines**: Confirm compliance targets (SOC2, GDPR) and encryption requirements for journals.
