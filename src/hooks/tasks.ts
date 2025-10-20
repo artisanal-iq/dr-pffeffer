@@ -21,7 +21,9 @@ import type {
 } from "@/types/models";
 import { qk } from "./keys";
 
-const DEFAULT_LIMIT = 50;
+export type { TaskListResponse } from "@/types/models";
+
+const DEFAULT_LIMIT = 200;
 const DEFAULT_OFFSET = 0;
 
 type TaskCacheSnapshot = Array<[QueryKey, unknown]>;
@@ -72,6 +74,38 @@ export function useTasks(params?: TaskListParams) {
   });
 }
 
+export type TaskFilters = {
+  status: TaskStatus | null;
+  priority: TaskPriority | null;
+  from: string | null;
+  to: string | null;
+  limit: number;
+  offset: number;
+};
+
+export function normalizeTaskFilters(filters?: Partial<TaskFilters>): TaskFilters {
+  return {
+    status: filters?.status ?? null,
+    priority: filters?.priority ?? null,
+    from: filters?.from ?? null,
+    to: filters?.to ?? null,
+    limit: filters?.limit ?? DEFAULT_LIMIT,
+    offset: filters?.offset ?? DEFAULT_OFFSET,
+  };
+}
+
+export function serializeTaskFilters(filters?: Partial<TaskFilters>): string {
+  const normalized = normalizeTaskFilters(filters);
+  const params = new URLSearchParams();
+  if (normalized.status) params.set("status", normalized.status);
+  if (normalized.priority) params.set("priority", normalized.priority);
+  if (normalized.from) params.set("from", normalized.from);
+  if (normalized.to) params.set("to", normalized.to);
+  params.set("limit", normalized.limit.toString());
+  params.set("offset", normalized.offset.toString());
+  return params.toString();
+}
+
 export type TaskWindowParams = { from: string; to: string; limit?: number };
 
 export function useTasksWindow(range: TaskWindowParams) {
@@ -118,6 +152,7 @@ export function createCreateTaskMutationOptions(qc: QueryClient): UseMutationOpt
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -161,6 +196,7 @@ export function createUpdateTaskMutationOptions(
         qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
       }
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -192,6 +228,7 @@ export function createDeleteTaskMutationOptions(
         qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
       }
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -261,13 +298,14 @@ export function useDeleteTask() {
 }
 
 function normalizeTaskListParams(params?: TaskListParams): TaskListParamsNormalized {
+  const normalized = normalizeTaskFilters(params);
   return {
-    status: params?.status ?? undefined,
-    priority: params?.priority ?? undefined,
-    from: params?.from ?? undefined,
-    to: params?.to ?? undefined,
-    limit: params?.limit ?? DEFAULT_LIMIT,
-    offset: params?.offset ?? DEFAULT_OFFSET,
+    status: normalized.status ?? undefined,
+    priority: normalized.priority ?? undefined,
+    from: normalized.from ?? undefined,
+    to: normalized.to ?? undefined,
+    limit: normalized.limit,
+    offset: normalized.offset,
   };
 }
 
