@@ -45,7 +45,7 @@ for (const entry of entries) {
 
   try {
     cpSync(source, target, { force: false });
-  } catch (error) {
+  } catch {
     // Ignore copy failures (file may already exist or be read-only)
   }
 }

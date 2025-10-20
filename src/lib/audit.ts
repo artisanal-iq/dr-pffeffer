@@ -1,15 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
-type AnySupabaseClient = SupabaseClient<any, "public", any>;
+type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 function toSafeJson(metadata?: JsonRecord | null) {
   return metadata ? JSON.parse(JSON.stringify(metadata)) : {};
 }
 
 export async function logUnauthorizedAccess(
-  supabase: AnySupabaseClient,
+  supabase: RpcCapableSupabaseClient,
   params: {
     requestPath: string;
     ipAddress?: string | null;
@@ -28,7 +29,7 @@ export async function logUnauthorizedAccess(
 }
 
 export async function logSettingsChange(
-  supabase: AnySupabaseClient,
+  supabase: RpcCapableSupabaseClient,
   params: {
     userId: string;
     metadata?: JsonRecord;

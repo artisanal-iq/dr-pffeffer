@@ -1,4 +1,3 @@
-import { PlannerClient } from "./planner-client";
 import { requireUser } from "@/lib/auth";
 import TaskList from "@/components/tasks/task-list";
 

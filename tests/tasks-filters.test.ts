@@ -6,6 +6,7 @@ describe("task query filters", () => {
   it("normalizes missing values and applies defaults", () => {
     expect(normalizeTaskFilters()).toEqual({
       status: null,
+      priority: null,
       from: null,
       to: null,
       limit: 200,

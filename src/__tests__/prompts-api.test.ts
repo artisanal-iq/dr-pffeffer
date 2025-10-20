@@ -21,6 +21,8 @@ vi.mock("@/lib/supabase-server", async () => {
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 const mockedCreateClient = vi.mocked(createSupabaseRouteHandlerClient);
 
+type RouteHandlerClient = Awaited<ReturnType<typeof createSupabaseRouteHandlerClient>>;
+
 type SupabaseMock = {
   auth: { getUser: ReturnType<typeof vi.fn> };
   rpc: ReturnType<typeof vi.fn>;
@@ -53,7 +55,7 @@ function buildPrompt(overrides: Partial<Prompt> = {}): Prompt {
 function buildSupabaseMock(user: MockUser | null): SupabaseMock {
   return {
     auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user }, error: null }),
+      getUser: vi.fn(() => Promise.resolve({ data: { user }, error: null })),
     },
     rpc: vi.fn(),
   };
@@ -62,8 +64,8 @@ function buildSupabaseMock(user: MockUser | null): SupabaseMock {
 function setupClient(user: MockUser | null) {
   const supabase = buildSupabaseMock(user);
   mockedCreateClient.mockResolvedValue({
-    supabase,
-    applyCookies: <T extends Response>(response: T) => response,
+    supabase: supabase as unknown as RouteHandlerClient["supabase"],
+    applyCookies: ((response: Parameters<RouteHandlerClient["applyCookies"]>[0]) => response) as RouteHandlerClient["applyCookies"],
   });
   return supabase;
 }

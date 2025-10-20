@@ -23,9 +23,9 @@ function respondError(applyCookies: ApplyCookies, code: string, message: string,
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ promptId: string }> },
+  context: { params: { promptId: string } },
 ) {
-  const params = await context.params;
+  const params = context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
@@ -60,9 +60,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ promptId: string }> },
+  context: { params: { promptId: string } },
 ) {
-  const params = await context.params;
+  const params = context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
@@ -116,9 +116,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ promptId: string }> },
+  context: { params: { promptId: string } },
 ) {
-  const params = await context.params;
+  const params = context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
