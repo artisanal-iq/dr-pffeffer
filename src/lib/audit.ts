@@ -10,7 +10,7 @@ function toSafeJson(metadata?: JsonRecord | null) {
 }
 
 export async function logUnauthorizedAccess(
-  supabase: AnySupabaseClient,
+  supabase: RpcCapableSupabaseClient,
   params: {
     requestPath: string;
     ipAddress?: string | null;
@@ -29,7 +29,7 @@ export async function logUnauthorizedAccess(
 }
 
 export async function logSettingsChange(
-  supabase: AnySupabaseClient,
+  supabase: RpcCapableSupabaseClient,
   params: {
     userId: string;
     metadata?: JsonRecord;
