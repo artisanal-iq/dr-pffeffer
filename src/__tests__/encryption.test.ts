@@ -48,4 +48,20 @@ describe("encryption utilities", () => {
     const summary = await decryptJournalField("legacy ai summary");
     expect(summary).toBe("legacy ai summary");
   });
+
+  test("propagates errors for corrupted ciphertext", async () => {
+    const plaintext = "sensitive data";
+    const encrypted = await encryptString(plaintext);
+    const corrupted = `${encrypted.slice(0, -4)}AAAA`;
+    await expect(decryptJournalField(corrupted)).rejects.toThrow(DOMException);
+  });
+
+  test("propagates errors when the encryption key is incorrect", async () => {
+    const plaintext = "different key scenario";
+    const encrypted = await encryptString(plaintext);
+    const originalKey = process.env.JOURNAL_ENCRYPTION_KEY;
+    process.env.JOURNAL_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString("base64");
+    await expect(decryptJournalField(encrypted)).rejects.toThrow(DOMException);
+    process.env.JOURNAL_ENCRYPTION_KEY = originalKey;
+  });
 });
