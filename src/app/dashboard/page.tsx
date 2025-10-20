@@ -6,6 +6,9 @@ import { observeDashboardRoute } from "@/lib/observability";
 import DashboardContent from "./dashboard-content";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 
+import DashboardContent from "./dashboard-content";
+import { DashboardSkeleton } from "./dashboard-skeleton";
+
 export default async function DashboardPage() {
   const user = await requireUser("/dashboard");
 
