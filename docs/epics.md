@@ -130,19 +130,17 @@
 **Epic Statement:** As an influence-minded professional, I want a reflective journal workspace so that I can track growth in my communication and presence.
 
 **Scope & Boundaries**
-- **In Scope:** Journal entry creation (text & optional browser speech-to-text), tagging, historical list/timeline view, Supabase storage, baseline summaries (rule-based placeholder), integration with dashboard.
-- **Out of Scope:** GPT-powered summaries (Epic 7), sentiment trend analytics (Epic 7), mobile voice capture enhancements.
+- **In Scope:** Journal entry creation (text-only for MVP), tagging, historical list/timeline view, Supabase storage, baseline summaries (rule-based placeholder), integration with dashboard.
+- **Out of Scope:** Speech-to-text capture (deferred follow-up), GPT-powered summaries (Epic 7), sentiment trend analytics (Epic 7), mobile voice capture enhancements.
 
 **Acceptance Criteria**
 1. Users can create, edit, and delete journal entries with timestamp and optional tags.
-2. Browser speech-to-text (Web Speech API) can populate journal entries when supported.
-3. Journal timeline view supports search and filtering by tags/date range.
-4. Placeholder summary logic stores insights accessible on dashboard cards.
-5. Data stored securely with encryption at rest and protected from unauthorized access.
+2. Journal timeline view supports search and filtering by tags/date range.
+3. Placeholder summary logic stores insights accessible on dashboard cards.
+4. Data stored securely with encryption at rest and protected from unauthorized access.
 
 **High-Level User Stories**
 - Implement journal editor with autosave and distraction-free mode.
-- Integrate browser speech-to-text fallback with graceful degradation.
 - Create timeline/history view with infinite scroll and filters.
 - Build API endpoints for summaries (rule-based) and ensure Drizzle schema coverage.
 
@@ -157,12 +155,12 @@
 - Ensure accessibility compliance (WCAG 2.1 AA) for editor controls.
 
 **Integrations / Third-Party Services**
-- Supabase storage, potential use of open-source speech-to-text polyfill for unsupported browsers.
+- Supabase storage; backlog story will evaluate speech-to-text providers/polyfills for a future milestone.
 
 **Definition of Done**
 - Security review validating encryption and access controls.
 - Usability test with beta users ensures editor meets distraction-free goal.
-- Analytics events for journal start, save, delete, playback of voice capture.
+- Analytics events for journal start, save, and delete interactions.
 - Documentation on data retention policies and export options.
 - Localization hooks for prompts and helper text.
 
