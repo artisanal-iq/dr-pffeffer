@@ -172,13 +172,13 @@
 **Epic Statement:** As a results-oriented practitioner, I want a dashboard summarizing my progress so that I can adjust my behavior intentionally.
 
 **Scope & Boundaries**
-- **In Scope:** Dashboard layout, daily power score prototype, calendar heatmap, quick-add shortcuts, integration with tasks/practices/journals, baseline charts.
-- **Out of Scope:** Advanced analytics (Epic 8), AI insights (Epic 7), cohort comparisons (Epic 8).
+- **In Scope:** Dashboard layout, daily power score prototype, calendar heatmap, quick navigation shortcuts to existing task/practice/journal creation flows, baseline charts.
+- **Out of Scope:** Advanced analytics (Epic 8), AI insights (Epic 7), cohort comparisons (Epic 8), inline quick-add modals until supporting components exist.
 
 **Acceptance Criteria**
 1. Dashboard aggregates tasks completed, reflections logged, confidence trend to produce daily power score.
 2. Calendar heatmap displays consistency streaks for tasks/practices.
-3. Quick-add buttons allow inline capture for tasks, journals, and connections.
+3. Dashboard quick navigation buttons link to existing task, journal, and relationship creation experiences (inline quick-add modals deferred to backlog).
 4. Dashboard modules responsive across desktop/tablet/mobile breakpoints.
 5. Performance benchmarks meet <1.5s data load after authentication.
 
@@ -186,7 +186,7 @@
 - Implement dashboard shell using shadcn/ui components and responsive grid.
 - Build power score calculation service combining key metrics.
 - Add calendar heatmap visualization with tooltip details.
-- Integrate quick-add modals for tasks, journal, and connections.
+- Wire dashboard quick navigation buttons to existing creation pages for tasks, journal entries, and relationships.
 
 **Epic Estimate:** 75 story points.
 
@@ -214,7 +214,7 @@
 **Epic Statement:** As an ambitious connector, I want to track key relationships so that I sustain a strong influence network.
 
 **Scope & Boundaries**
-- **In Scope:** Contacts CRUD, tagging/categorization, follow-up reminders, notes, integration with dashboard quick add, basic reporting.
+- **In Scope:** Contacts CRUD, tagging/categorization, follow-up reminders, notes, integration with dashboard quick navigation shortcuts, basic reporting.
 - **Out of Scope:** Influence map visualization (Epic 8), AI follow-up recommendations (Epic 8), external contact imports.
 
 **Acceptance Criteria**
