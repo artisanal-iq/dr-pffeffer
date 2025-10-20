@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { unstable_noStore as noStore } from "next/cache";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -113,9 +112,7 @@ function toDailyMetrics(rows: DailyRow[] | null | undefined): DailyMetric[] {
   }));
 }
 
-export const loadDashboardData = cache(async function loadDashboardData(
-  userId: string
-): Promise<DashboardData> {
+export async function loadDashboardData(userId: string): Promise<DashboardData> {
   noStore();
   const supabase = await createSupabaseServerClient();
 
@@ -139,4 +136,4 @@ export const loadDashboardData = cache(async function loadDashboardData(
   const daily = limitDailyMetrics(toDailyMetrics(dailyResult.data));
 
   return { summary, daily };
-});
+}
