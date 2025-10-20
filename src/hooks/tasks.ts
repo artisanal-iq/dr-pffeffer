@@ -152,6 +152,7 @@ export function createCreateTaskMutationOptions(qc: QueryClient): UseMutationOpt
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -195,6 +196,7 @@ export function createUpdateTaskMutationOptions(
         qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
       }
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -226,6 +228,7 @@ export function createDeleteTaskMutationOptions(
         qc.invalidateQueries({ queryKey: qk.tasks.detail(variables.id) });
       }
       qc.invalidateQueries({ queryKey: qk.tasks.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }

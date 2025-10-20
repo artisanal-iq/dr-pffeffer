@@ -28,6 +28,7 @@ export function useCreatePowerPractice() {
       apiFetch<PowerPractice>(`/api/power_practices`, { method: "POST", body: JSON.stringify(input) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.powerPractices.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   });
 }
@@ -40,6 +41,7 @@ export function useUpdatePowerPractice(id: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.powerPractices.detail(id) });
       qc.invalidateQueries({ queryKey: qk.powerPractices.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   });
 }
@@ -50,6 +52,7 @@ export function useDeletePowerPractice(id: string) {
     mutationFn: () => apiFetch<{ ok: true }>(`/api/power_practices/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.powerPractices.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   });
 }
