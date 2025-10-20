@@ -84,6 +84,7 @@ export function createCreateJournalMutationOptions(
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: qk.journals.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   };
 }
@@ -96,11 +97,12 @@ export function useCreateJournal() {
 export function useUpdateJournal(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: UpdateJournalInput) =>
+    mutationFn: (patch: Partial<Pick<Journal, "entry" | "ai_summary" | "summary_metadata" | "date">>) =>
       apiFetch<Journal>(`/api/journals/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.journals.detail(id) });
       qc.invalidateQueries({ queryKey: qk.journals.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   });
 }
@@ -111,6 +113,7 @@ export function useDeleteJournal(id: string) {
     mutationFn: () => apiFetch<{ ok: true }>(`/api/journals/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.journals.all() });
+      qc.invalidateQueries({ queryKey: qk.powerScore.all() });
     },
   });
 }
