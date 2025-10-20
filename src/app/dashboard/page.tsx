@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { requireUser } from "@/lib/auth";
+import { observeDashboardRoute } from "@/lib/observability";
 
 import DashboardContent from "./dashboard-content";
 import { DashboardSkeleton } from "./dashboard-skeleton";

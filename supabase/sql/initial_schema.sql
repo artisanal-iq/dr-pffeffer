@@ -227,6 +227,8 @@ create index if not exists power_practices_date_idx on public.power_practices (d
 );
  create index if not exists journals_user_id_idx on public.journals (user_id);
  create index if not exists journals_date_idx on public.journals (date);
+ create index if not exists journals_user_date_idx on public.journals (user_id, date desc);
+ create index if not exists journals_tags_idx on public.journals using gin (tags);
 
 -- Connections
 create table if not exists public.connections (
