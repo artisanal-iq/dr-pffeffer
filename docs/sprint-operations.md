@@ -26,3 +26,9 @@ To keep the sprint board resilient when unexpected issues appear, follow these g
 - Record the carried-over amount in the sprint planning notes to reinforce accountability for maintaining the buffer discipline.
 
 Adhering to these practices keeps the team responsive to surprises without silently derailing sprint commitments.
+
+## Backlog Notes
+- **Relationship Tracker reminders & tagging** — Defer to upcoming sprint. Includes:
+  - Scheduling user-defined follow-up reminders surfaced in planner or notifications.
+  - Tagging/categorization UI and filtering to segment contacts.
+  - Any dashboard integrations tied to reminder completion metrics.

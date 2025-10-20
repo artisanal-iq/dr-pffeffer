@@ -211,44 +211,42 @@
 ---
 
 ## Epic 6: Relationship Tracker Foundation
-**Epic Statement:** As an ambitious connector, I want to track key relationships so that I sustain a strong influence network.
+**Epic Statement:** As an ambitious connector, I want to capture who I’m building relationships with so that I can return later to deepen those connections.
 
 **Scope & Boundaries**
-- **In Scope:** Contacts CRUD, tagging/categorization, follow-up reminders, notes, integration with dashboard quick add, basic reporting.
-- **Out of Scope:** Influence map visualization (Epic 8), AI follow-up recommendations (Epic 8), external contact imports.
+- **In Scope:** Create/read/delete contact records storing name and optional organization, searchable list view, quick-add modal on the connections page, Supabase persistence aligned with existing CRUD APIs.
+- **Out of Scope:** Follow-up reminders, tagging/categorization, notes/next actions UI, planner/dashboard integration, and automated nudges (moved to backlog for a future release).
 
 **Acceptance Criteria**
-1. Users can add, edit, archive contacts with metadata (organization, category, notes).
-2. Follow-up reminders trigger notifications or appear on planner when due.
-3. Relationship data integrates with dashboard metrics (e.g., follow-ups completed).
-4. Search and filter capabilities available for contacts list.
-5. Data privacy safeguards align with journal storage policies.
+1. Users can add a connection with required name and optional organization via the connections quick-add modal.
+2. Newly added connections appear at the top of the list and can be searched by name or organization.
+3. Users can delete a connection from the list and see the removal reflected after refresh.
+4. Connection data remains private to the owning user per Supabase policies.
+5. Future reminder/tagging enhancements are captured in the backlog so prioritization conversations persist.
 
 **High-Level User Stories**
-- Build contact list view with filters and quick actions.
-- Implement follow-up reminder scheduling and surfaced tasks.
-- Create notes/history log per contact.
-- Integrate relationship stats into dashboard quick tiles.
+- Build the create-connection modal capturing name and organization and persisting via Supabase.
+- Display a searchable connections list ordered by most recent updates.
+- Provide delete controls to remove stale connections.
+- Document the deferred reminder/tagging enhancements for backlog planning.
 
-**Epic Estimate:** 60 story points.
+**Epic Estimate:** 28 story points.
 
-**Dependencies:** Epic 1 (auth), Epic 2 (planner integration), Epic 5 (dashboard display).
+**Dependencies:** Epic 1 (auth baseline) for gating access to the connections route.
 
 **Technical Considerations & Architectural Decisions**
-- Decide on reminder scheduling mechanism (Supabase cron vs Vercel cron).
-- Normalize contact data to support future analytics (graph relationships).
-- Ensure GDPR-friendly data export/delete operations.
-- Plan for eventual integration with email/calendar connectors.
+- Ensure the list query supports lightweight search filtering without additional indexes.
+- Keep the Supabase schema flexible (nullable notes/next-action fields) for upcoming enhancements without exposing unused UI.
+- Provide guidance for client validation so empty names cannot be submitted.
+- Outline migration path for layering reminders/tagging when prioritised.
 
 **Integrations / Third-Party Services**
-- Supabase edge functions/cron, optional email notification service.
+- Supabase Postgres (existing table + RLS); no cron or email integrations until reminder work lands.
 
 **Definition of Done**
-- Automated tests cover CRUD and reminder triggers.
-- Legal/privacy review for storage of contact information.
-- UX review validates quick-add and reminder flows.
-- Documentation for customer success on managing contacts.
-- Analytics events instrumented for add/edit/follow-up complete.
+- Automated tests or manual QA confirm add/list/delete flows for the connections endpoint.
+- Release notes or documentation updated for customer success/support teams describing current tracker limitations and future plans.
+- Analytics events instrumented for connection add/delete to inform future prioritization.
 
 ---
 

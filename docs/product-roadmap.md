@@ -16,7 +16,7 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 | Task + Planner CRUD | Tasks with contexts, priorities, scheduling, Supabase sync, calendar view (manual). | M |
 | Power Practice Routine | Morning focus prompt selection, midday nudges (manual scheduler), end-of-day rating capture. | M |
 | Influence Journal | Text/voice entry capture (voice-to-text via browser), AI summary placeholder (rule-based). | S |
-| Relationship Tracker | Contact management with reminders, basic tagging. | M |
+| Relationship Tracker | Capture connection name and organization; reminders/tagging deferred to a future enhancement. | S |
 | Dashboard Foundations | Power score calculation (rule-based), calendar heatmap, quick-add buttons. | M |
 | Auth & Settings | Supabase Auth, profile settings, notification preferences. | S |
 
