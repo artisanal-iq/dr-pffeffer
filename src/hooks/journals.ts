@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -48,6 +49,35 @@ export function useJournals(params?: JournalListParams) {
     queryKey: qk.journals.list(normalized),
     queryFn: () =>
       apiFetch<JournalListResponse>(`/api/journals${search ? `?${search}` : ""}`),
+  });
+}
+
+type InfiniteJournalParams = {
+  from?: string;
+  to?: string;
+  tags?: readonly string[];
+  limit?: number;
+};
+
+export function useInfiniteJournals(params?: InfiniteJournalParams) {
+  const limit = params?.limit ?? 50;
+  const normalized = normalizeJournalParams({ ...(params ?? {}), limit });
+  const baseParams: JournalListParams = normalized ?? { limit };
+  const keyParams = { from: baseParams.from, to: baseParams.to, tags: baseParams.tags, limit };
+
+  return useInfiniteQuery({
+    initialPageParam: 0,
+    queryKey: qk.journals.infinite(keyParams),
+    queryFn: ({ pageParam }) => {
+      const offset = typeof pageParam === "number" ? pageParam : 0;
+      const search = buildJournalSearch({ ...baseParams, offset });
+      return apiFetch<JournalListResponse>(`/api/journals${search ? `?${search}` : ""}`);
+    },
+    getNextPageParam: (lastPage, pages) => {
+      const totalLoaded = pages.reduce((sum, page) => sum + page.items.length, 0);
+      const totalAvailable = lastPage.count ?? pages[0]?.count ?? totalLoaded;
+      return totalLoaded >= totalAvailable ? undefined : totalLoaded;
+    },
   });
 }
 
