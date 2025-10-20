@@ -8,6 +8,7 @@ const cryptoObj: Crypto =
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const keyCache = new Map<string, Promise<CryptoKey>>();
+const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
 
 function assertKeyMaterial(rawKey?: string): string {
   if (!rawKey) {
@@ -78,14 +79,28 @@ export async function decryptString(payload: string): Promise<string> {
 }
 
 async function decryptJournalValue(value: string): Promise<string> {
+  if (!base64Pattern.test(value)) {
+    return value;
+  }
+
+  let decoded: Uint8Array;
+  try {
+    decoded = new Uint8Array(base64ToArrayBuffer(value));
+  } catch (err) {
+    if (err instanceof DOMException || err instanceof Error) {
+      return value;
+    }
+    throw err;
+  }
+
+  if (decoded.byteLength < 28) {
+    return value;
+  }
+
   try {
     return await decryptString(value);
   } catch (err) {
-    if (
-      err instanceof DOMException ||
-      (err instanceof Error && (err.name === "OperationError" || err.name === "InvalidCharacterError"))
-    ) {
-      // Fall back to returning the original value for legacy plaintext rows.
+    if (err instanceof DOMException && err.name === "InvalidCharacterError") {
       return value;
     }
     throw err;
