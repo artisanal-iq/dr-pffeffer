@@ -17,6 +17,7 @@ const dayFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "short",
   month: "short",
   day: "numeric",
+  timeZone: "UTC",
 });
 
 function formatTooltip(count: number) {
