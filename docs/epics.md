@@ -46,19 +46,20 @@
 **Epic Statement:** As a power-building professional, I want to organize and schedule my tasks so that my day reflects my strategic priorities.
 
 **Scope & Boundaries**
-- **In Scope:** Task CRUD, contexts, priorities, statuses, manual scheduling UI, calendar view, Supabase persistence, Drizzle models, basic power score inputs.
+- **In Scope:** Task CRUD, contexts, priorities, statuses, manual scheduling UI (list view), calendar view (pending; tracked separately), Supabase persistence, Drizzle models, basic power score inputs.
 - **Out of Scope:** Automated auto-plan algorithm (covered in Epic 7), external calendar sync (Epic 9), complex recurring tasks.
 
 **Acceptance Criteria**
 1. Users can create, edit, complete, archive, and delete tasks with priority and context metadata.
-2. Planner calendar shows daily/weekly view with drag-and-drop manual scheduling.
+2. Planner list view supports manual scheduling and status updates. Calendar and drag-and-drop scheduling remain outstanding (see Story PPLN-203).
 3. Tasks persist to Supabase via Drizzle models with optimistic UI updates.
 4. Completed tasks feed dashboard metrics and power score calculations.
 5. Timezone-aware scheduling ensures consistency for users globally.
 
 **High-Level User Stories**
 - Build task list view with filters for context, priority, and status.
-- Implement planner calendar with drag-and-drop scheduling interactions.
+- Implement planner calendar with drag-and-drop scheduling interactions. *(Outstanding – Story PPLN-203 targeted for next sprint).* 
+- **Story PPLN-203 (Pending):** Build calendar scheduling UI with drag-and-drop and multi-day views to ship post-list view release.
 - Create Drizzle schema & Supabase procedures for tasks including indexes.
 - Integrate React Query mutations with optimistic updates and error handling.
 

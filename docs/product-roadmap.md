@@ -13,7 +13,7 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 **Capabilities & Complexity**
 | Capability | Description | Complexity |
 | --- | --- | --- |
-| Task + Planner CRUD | Tasks with contexts, priorities, scheduling, Supabase sync, calendar view (manual). | M |
+| Task + Planner CRUD | Tasks with contexts, priorities, list-based scheduling, Supabase sync. Calendar UI pending. | M |
 | Power Practice Routine | Morning focus prompt selection, midday nudges (manual scheduler), end-of-day rating capture. | M |
 | Influence Journal | Text entry capture for journals (speech-to-text deferred to future milestone), AI summary placeholder (rule-based). | S |
 | Relationship Tracker | Contact management with reminders, basic tagging. | M |
