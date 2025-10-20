@@ -23,35 +23,31 @@ type JournalMutationContext = {
 
 type CreateJournalInput = { entry: string; date: string };
 
-type UpdateJournalInput = Partial<Pick<Journal, "entry" | "ai_summary" | "date">>;
+type UpdateJournalInput = Partial<
+  Pick<Journal, "entry" | "ai_summary" | "summary_metadata" | "date">
+>;
 
-type JournalQueryParams = {
+type JournalListParams = {
   from?: string;
   to?: string;
-  tags?: string[];
+  tags?: readonly string[];
   limit?: number;
   offset?: number;
 };
 
-export function serializeJournalParams(params?: JournalQueryParams) {
-  const search = new URLSearchParams();
-  if (params?.from) search.set("from", params.from);
-  if (params?.to) search.set("to", params.to);
-  if (params?.tags && params.tags.length > 0) {
-    for (const tag of params.tags) {
-      search.append("tags", tag);
-    }
-  }
-  if (params?.limit) search.set("limit", String(params.limit));
-  if (params?.offset) search.set("offset", String(params.offset));
-  return search;
+export function serializeJournalParams(
+  params?: JournalListParams,
+): string {
+  return buildJournalSearch(normalizeJournalParams(params));
 }
 
-export function useJournals(params?: JournalQueryParams) {
-  const serialized = serializeJournalParams(params);
+export function useJournals(params?: JournalListParams) {
+  const normalized = normalizeJournalParams(params);
+  const search = buildJournalSearch(normalized);
   return useQuery({
-    queryKey: qk.journals.list({ from: params?.from, to: params?.to }),
-    queryFn: () => apiFetch<JournalListResponse>(`/api/journals${search.toString() ? `?${search}` : ""}`),
+    queryKey: qk.journals.list(normalized),
+    queryFn: () =>
+      apiFetch<JournalListResponse>(`/api/journals${search ? `?${search}` : ""}`),
   });
 }
 
@@ -115,8 +111,11 @@ export function useCreateJournal() {
 export function useUpdateJournal(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: Partial<Pick<Journal, "entry" | "ai_summary" | "summary_metadata" | "date">>) =>
-      apiFetch<Journal>(`/api/journals/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    mutationFn: (patch: UpdateJournalInput) =>
+      apiFetch<Journal>(`/api/journals/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.journals.detail(id) });
       qc.invalidateQueries({ queryKey: qk.journals.all() });
@@ -151,36 +150,68 @@ function snapshotJournals(qc: QueryClient): JournalCacheSnapshot {
 }
 
 function restoreSnapshot(qc: QueryClient, snapshot: JournalCacheSnapshot) {
-  for (const [key, value] of snapshot) {
-    qc.setQueryData(key, value);
-  }
+  snapshot.forEach(([key, value]) => qc.setQueryData(key, value));
 }
 
 function applyJournalToCaches(qc: QueryClient, journal: Journal) {
   qc.setQueryData(qk.journals.detail(journal.id), journal);
-  const queries = qc.getQueriesData<JournalListResponse>({ queryKey: qk.journals.all() });
-  for (const [key, value] of queries) {
-    if (!Array.isArray(key) || key[0] !== "journals" || key[1] === "detail") continue;
-    const current = value as JournalListResponse | undefined;
-    if (!current) continue;
+  updateJournalListCaches(qc, (current) => {
     const exists = current.items.some((item) => item.id === journal.id);
-    const filtered = current.items.filter((item) => item.id !== journal.id);
-    const items = [journal, ...filtered];
-    const count = exists ? current.count : current.count + 1;
-    qc.setQueryData(key, { ...current, items, count });
-  }
+    const items = [journal, ...current.items.filter((item) => item.id !== journal.id)];
+    return { ...current, items, count: exists ? current.count : current.count + 1 };
+  });
 }
 
 function removeJournalFromCaches(qc: QueryClient, id: string) {
   qc.setQueryData(qk.journals.detail(id), undefined);
+  updateJournalListCaches(qc, (current) => {
+    if (!current.items.some((item) => item.id === id)) return undefined;
+    const items = current.items.filter((item) => item.id !== id);
+    return { ...current, items, count: Math.max(0, current.count - 1) };
+  });
+}
+
+function updateJournalListCaches(
+  qc: QueryClient,
+  updater: (current: JournalListResponse) => JournalListResponse | undefined,
+) {
   const queries = qc.getQueriesData<JournalListResponse>({ queryKey: qk.journals.all() });
   for (const [key, value] of queries) {
-    if (!Array.isArray(key) || key[0] !== "journals" || key[1] === "detail") continue;
-    const current = value as JournalListResponse | undefined;
-    if (!current) continue;
-    const exists = current.items.some((item) => item.id === id);
-    if (!exists) continue;
-    const items = current.items.filter((item) => item.id !== id);
-    qc.setQueryData(key, { ...current, items, count: Math.max(0, current.count - 1) });
+    if (!Array.isArray(key) || key[0] !== "journals" || key[1] === "detail" || !value) continue;
+    const next = updater(value);
+    if (next && next !== value) {
+      qc.setQueryData(key, next);
+    }
   }
+}
+
+function normalizeJournalParams(params?: JournalListParams): JournalListParams | null {
+  if (!params) return null;
+  const { from, to, tags, limit, offset } = params;
+  const sortedTags = tags?.length ? [...tags].sort() : undefined;
+  if (!from && !to && !sortedTags && limit === undefined && offset === undefined) {
+    return null;
+  }
+  return {
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
+    ...(sortedTags ? { tags: sortedTags } : {}),
+    ...(limit !== undefined ? { limit } : {}),
+    ...(offset !== undefined ? { offset } : {}),
+  } as JournalListParams;
+}
+
+function buildJournalSearch(params: JournalListParams | null): string {
+  if (!params) return "";
+  const search = new URLSearchParams();
+  if (params.from) search.set("from", params.from);
+  if (params.to) search.set("to", params.to);
+  if (params.tags) {
+    for (const tag of params.tags) {
+      search.append("tags", tag);
+    }
+  }
+  if (params.limit !== undefined) search.set("limit", String(params.limit));
+  if (params.offset !== undefined) search.set("offset", String(params.offset));
+  return search.toString();
 }
