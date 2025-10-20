@@ -16,6 +16,22 @@ export const timeStringSchema = z
   .string()
   .regex(/^([01]\d|2[0-3]):([0-5]\d)$/u, "Enter time as HH:MM");
 
+export const nudgeScheduleEntrySchema = z.object({
+  time: timeStringSchema,
+  enabled: z.boolean(),
+});
+
+export const nudgeScheduleSchema = z
+  .array(nudgeScheduleEntrySchema)
+  .max(12, "Choose up to 12 nudges per day.")
+  .refine(
+    (value) => {
+      const times = value.map((entry) => entry.time);
+      return new Set(times).size === times.length;
+    },
+    { message: "Each scheduled time must be unique." }
+  );
+
 export const profilePreferencesSchema = z.object({
   persona: z.enum(personaOptions).nullable().optional(),
   work_start: timeStringSchema.nullable().optional(),
@@ -23,6 +39,7 @@ export const profilePreferencesSchema = z.object({
   theme: z.enum(themeModeOptions).nullable().optional(),
   theme_contrast: z.enum(themeContrastOptions).nullable().optional(),
   accent_color: z.enum(accentColorOptions).nullable().optional(),
+  nudge_schedule: nudgeScheduleSchema.optional(),
 });
 
 export type ProfilePreferences = z.infer<typeof profilePreferencesSchema>;
