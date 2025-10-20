@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 export const dynamic = "force-dynamic";
 import Link from "next/link";
+import { AppHeader } from "@/components/layout/app-header";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import "./globals.css";
 import Providers from "./providers";
