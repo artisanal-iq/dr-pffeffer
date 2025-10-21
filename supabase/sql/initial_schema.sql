@@ -13,6 +13,7 @@ create table if not exists public.tasks (
   status public.task_status not null default 'todo',
   priority public.task_priority not null default 'medium',
   scheduled_time timestamptz null,
+  duration_minutes integer not null default 60 check (duration_minutes between 1 and 24 * 60),
   context jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -74,6 +75,28 @@ begin
   update public.tasks set context = '{}'::jsonb where context is null;
   alter table public.tasks alter column context set default '{}'::jsonb;
   alter table public.tasks alter column context set not null;
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'tasks'
+      and column_name = 'duration_minutes'
+  ) then
+    alter table public.tasks add column duration_minutes integer;
+  end if;
+  update public.tasks set duration_minutes = 60 where duration_minutes is null;
+  alter table public.tasks alter column duration_minutes set default 60;
+  alter table public.tasks alter column duration_minutes set not null;
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.tasks'::regclass
+      and conname = 'tasks_duration_minutes_check'
+  ) then
+    alter table public.tasks
+      add constraint tasks_duration_minutes_check
+      check (duration_minutes between 1 and 24 * 60);
+  end if;
 end;
 $$;
 
@@ -771,6 +794,7 @@ create or replace function public.create_task(
   p_status public.task_status default 'todo',
   p_priority public.task_priority default 'medium',
   p_scheduled_time timestamptz default null,
+  p_duration_minutes integer default 60,
   p_context jsonb default '{}'::jsonb
 )
 returns public.tasks
@@ -791,6 +815,7 @@ begin
     status,
     priority,
     scheduled_time,
+    duration_minutes,
     context
   )
   values (
@@ -799,6 +824,7 @@ begin
     coalesce(p_status, 'todo'),
     coalesce(p_priority, 'medium'),
     p_scheduled_time,
+    greatest(1, least(coalesce(p_duration_minutes, 60), 24 * 60)),
     coalesce(p_context, '{}'::jsonb)
   )
   returning * into v_task;
@@ -852,6 +878,10 @@ begin
           else (p_patch->>'scheduled_time')::timestamptz
         end
       else scheduled_time
+    end,
+    duration_minutes = case
+      when p_patch ? 'duration_minutes' then greatest(1, least((p_patch->>'duration_minutes')::integer, 24 * 60))
+      else duration_minutes
     end,
     context = case
       when p_patch ? 'context' then coalesce(p_patch->'context', '{}'::jsonb)
@@ -913,6 +943,6 @@ $$;
 
 grant execute on function public.list_tasks(public.task_status, public.task_priority, timestamptz, timestamptz, integer, integer) to authenticated;
 grant execute on function public.get_task(uuid) to authenticated;
-grant execute on function public.create_task(text, public.task_status, public.task_priority, timestamptz, jsonb) to authenticated;
+grant execute on function public.create_task(text, public.task_status, public.task_priority, timestamptz, integer, jsonb) to authenticated;
 grant execute on function public.update_task(uuid, jsonb) to authenticated;
 grant execute on function public.delete_task(uuid) to authenticated;
