@@ -32,6 +32,7 @@ export const qk = {
     all: () => ["connections"] as const,
     list: (q?: string | null) => ["connections", q] as const,
     detail: (id: string) => ["connections", "detail", id] as const,
+    intelligence: () => ["connections", "intelligence"] as const,
   },
   prompts: {
     all: () => ["prompts"] as const,

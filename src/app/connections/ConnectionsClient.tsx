@@ -7,6 +7,8 @@ import { CreateEntityModal } from "@/components/modals/create-entity-modal";
 import { Label } from "@/components/ui/label";
 import { useConnections, useCreateConnection, useDeleteConnection } from "@/hooks/connections";
 
+import IntelligencePanel from "@/components/connections/intelligence-panel";
+
 const createConnectionSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   org: z.string().trim().optional(),
@@ -20,11 +22,12 @@ export default function ConnectionsClient() {
   const create = useCreateConnection();
 
   return (
-    <div className="mt-6 grid gap-6 md:grid-cols-2">
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Track the people you want to stay in touch with. Add a connection to keep notes and next actions handy.
-        </p>
+    <div className="mt-6 space-y-10">
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Track the people you want to stay in touch with. Add a connection to keep notes and next actions handy.
+          </p>
         <CreateEntityModal<CreateConnectionValues>
           entityName="connection"
           title="Add connection"
@@ -74,25 +77,28 @@ export default function ConnectionsClient() {
         />
       </div>
 
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <input
-            value={q ?? ""}
-            onChange={(e) => setQ(e.target.value || null)}
-            placeholder="Search..."
-            className="border rounded px-3 py-2 bg-transparent w-full"
-          />
+        <div>
+          <div className="mb-3 flex items-center gap-2">
+            <input
+              value={q ?? ""}
+              onChange={(e) => setQ(e.target.value || null)}
+              placeholder="Search..."
+              className="w-full rounded border bg-transparent px-3 py-2"
+            />
+          </div>
+          {list.isLoading ? (
+            <p className="text-sm opacity-70">Loading...</p>
+          ) : (
+            <ul className="space-y-2">
+              {(list.data?.items ?? []).map((c) => (
+                <ConnectionItem key={c.id} id={c.id} name={c.name} org={c.org} />
+              ))}
+            </ul>
+          )}
         </div>
-        {list.isLoading ? (
-          <p className="text-sm opacity-70">Loading...</p>
-        ) : (
-          <ul className="space-y-2">
-            {(list.data?.items ?? []).map((c) => (
-              <ConnectionItem key={c.id} id={c.id} name={c.name} org={c.org} />
-            ))}
-          </ul>
-        )}
       </div>
+
+      <IntelligencePanel />
     </div>
   );
 }
