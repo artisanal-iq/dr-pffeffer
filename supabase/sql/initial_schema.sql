@@ -373,7 +373,7 @@ create or replace function public.update_prompt(
   p_body text default null,
   p_category text default null,
   p_is_active boolean default null,
-  p_user_id uuid,
+  p_user_id uuid default null,
   p_user_email text default null
 )
 returns public.prompts
