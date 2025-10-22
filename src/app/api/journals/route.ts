@@ -62,12 +62,12 @@ export async function POST(req: NextRequest) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return respond({ error: { code: "invalid_body", message: parsed.error.message } }, { status: 400 });
 
-  const { entry, date } = parsed.data;
+  const { entry, date, tags } = parsed.data;
   try {
     const encryptedEntry = await encryptString(entry);
     const { data, error } = await supabase
       .from("journals")
-      .insert({ user_id: user.id, entry: encryptedEntry, date })
+      .insert({ user_id: user.id, entry: encryptedEntry, date, tags })
       .select()
       .single();
     if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });

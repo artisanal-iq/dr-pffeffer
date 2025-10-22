@@ -72,6 +72,7 @@ export type Journal = {
   entry: string;
   ai_summary: string | null;
   summary_metadata: JournalSummaryMetadata | null;
+  tags: string[];
   date: string; // YYYY-MM-DD
   created_at: string;
   updated_at: string;
