@@ -22,7 +22,7 @@ type JournalMutationContext = {
   optimisticId: string;
 };
 
-type CreateJournalInput = { entry: string; date: string };
+type CreateJournalInput = { entry: string; date: string; tags?: string[] };
 
 type UpdateJournalInput = Partial<
   Pick<Journal, "entry" | "ai_summary" | "summary_metadata" | "date">
@@ -108,6 +108,8 @@ export function createCreateJournalMutationOptions(
         user_id: "__optimistic__",
         entry: input.entry,
         ai_summary: null,
+        summary_metadata: null,
+        tags: input.tags ?? [],
         date: input.date,
         created_at: now,
         updated_at: now,

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -68,6 +69,11 @@ export const journals = pgTable("journals", {
   aiSummary: text("ai_summary"),
   summaryMetadata: jsonb("summary_metadata").$type<JournalSummaryMetadata | null>(),
   date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  tags: text("tags")
+    .array()
+    .$type<string[]>()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
