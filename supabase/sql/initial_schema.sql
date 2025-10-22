@@ -1,9 +1,19 @@
 -- Extensions
 create extension if not exists pgcrypto;
 
--- Enum types
-create type if not exists public.task_status as enum ('todo', 'in_progress', 'done');
-create type if not exists public.task_priority as enum ('low', 'medium', 'high');
+do $$
+begin
+  create type public.task_status as enum ('todo', 'in_progress', 'done');
+exception when duplicate_object then
+  null;
+end $$;
+
+do $$
+begin
+  create type public.task_priority as enum ('low', 'medium', 'high');
+exception when duplicate_object then
+  null;
+end $$;
 
 -- Tasks
 create table if not exists public.tasks (
@@ -280,7 +290,12 @@ create table if not exists public.prompts (
 create index if not exists prompts_is_active_idx on public.prompts (is_active);
 create index if not exists prompts_category_idx on public.prompts (category);
 
-create type if not exists public.prompt_audit_action as enum ('created', 'updated', 'archived', 'restored');
+do $$
+begin
+  create type public.prompt_audit_action as enum ('created', 'updated', 'archived', 'restored');
+exception when duplicate_object then
+  null;
+end $$;
 
 create table if not exists public.prompt_audits (
   id uuid primary key default gen_random_uuid(),
