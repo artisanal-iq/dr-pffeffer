@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { ConsistencyHeatmapCard } from "@/components/dashboard/consistency-heatmap";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import {
   loadDashboardData,
   METRIC_GRID_BREAKPOINTS,
 } from "@/lib/dashboard";
+import PowerScoreCard from "@/components/dashboard/power-score-card";
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -134,12 +136,16 @@ export default async function DashboardContent({ userId }: DashboardContentProps
                 href="/connections"
               />
             </div>
-            <div className="rounded-lg border border-dashed border-black/10 p-4 text-sm dark:border-white/15">
-              <p className="font-medium text-foreground">Power score preview</p>
-              <p className="mt-1 text-muted-foreground">
-                Daily completions and streaks will shape your personalized power score once tracking begins.
-              </p>
-            </div>
+            <Suspense
+              fallback={
+                <div className="rounded-lg border border-dashed border-black/10 p-4 text-sm dark:border-white/15">
+                  <p className="font-medium text-foreground">Power score</p>
+                  <p className="mt-1 text-muted-foreground">Preparing live metrics…</p>
+                </div>
+              }
+            >
+              <PowerScoreCard />
+            </Suspense>
           </CardContent>
         </Card>
       </section>
