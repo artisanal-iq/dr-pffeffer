@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { ReflectionMetricsCard, ReflectionMetricsCardSkeleton } from "@/components/journal/ReflectionMetricsCard";
 import JournalClient from "./JournalClient";
 
 export default async function JournalPage() {
@@ -11,6 +13,9 @@ export default async function JournalPage() {
       <Link href="/journal/timeline" className="mt-3 inline-flex items-center text-sm font-medium underline">
         Explore the timeline view
       </Link>
+      <Suspense fallback={<ReflectionMetricsCardSkeleton />}>
+        <ReflectionMetricsCard />
+      </Suspense>
       <JournalClient />
     </main>
   );

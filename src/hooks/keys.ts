@@ -43,4 +43,7 @@ export const qk = {
   settings: {
     root: () => ["settings"] as const,
   },
+  metrics: {
+    reflections: () => ["metrics", "reflections"] as const,
+  },
 } as const;
