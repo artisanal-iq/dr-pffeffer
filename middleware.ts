@@ -82,7 +82,10 @@ export function createAuthMiddleware({
   return async function authMiddleware(req: NextRequest) {
     const baseResponse = NextResponse.next();
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (
+      createClient === defaultCreateClient &&
+      (!supabaseUrl || !supabaseAnonKey)
+    ) {
       return baseResponse;
     }
 
