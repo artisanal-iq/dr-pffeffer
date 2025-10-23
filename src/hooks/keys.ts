@@ -45,5 +45,10 @@ export const qk = {
   },
   metrics: {
     reflections: () => ["metrics", "reflections"] as const,
+    daily: (params: unknown) => ["metrics", "daily", params] as const,
+  },
+  powerScore: {
+    all: () => ["power_score"] as const,
+    range: (range: unknown) => ["power_score", range] as const,
   },
 } as const;
