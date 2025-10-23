@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Suspense } from "react";
 
 import { ConsistencyHeatmapCard } from "@/components/dashboard/consistency-heatmap";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
