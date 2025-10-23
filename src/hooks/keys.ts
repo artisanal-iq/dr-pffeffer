@@ -43,4 +43,8 @@ export const qk = {
   settings: {
     root: () => ["settings"] as const,
   },
+  metrics: {
+    daily: (params?: { from?: string | null; to?: string | null } | null) =>
+      ["metrics", "daily", params ?? null] as const,
+  },
 } as const;
