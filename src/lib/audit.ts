@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
-type AnySupabaseClient = SupabaseClient<any, any, any>;
+type RpcCapableSupabaseClient = Pick<SupabaseClient<any, any, any>, "rpc">;
 
 function toSafeJson(metadata?: JsonRecord | null) {
   return metadata ? JSON.parse(JSON.stringify(metadata)) : {};
