@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 
 import { GlobalNavLinks } from "./global-nav-links";
 import ThemeToggle from "@/components/ui/theme-toggle";
+import { isAdminUser } from "@/lib/rbac";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -17,13 +18,17 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ user }: AppHeaderProps) {
+  const links = isAdminUser(user)
+    ? [...NAV_LINKS, { href: "/admin/prompts", label: "Admin · Prompts" }]
+    : NAV_LINKS;
+
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75 dark:border-white/10">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link className="text-base font-semibold text-foreground" href="/">
           Power Practice
         </Link>
-        <GlobalNavLinks links={NAV_LINKS} />
+        <GlobalNavLinks links={links} />
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
           {user ? (
