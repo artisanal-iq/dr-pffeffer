@@ -10,12 +10,6 @@ type SummaryRow = {
   most_recent_completion_date: string | null;
 };
 
-type DailyRow = {
-  bucket_date: string;
-  completed_count: number | null;
-  updated_at: string | null;
-};
-
 export type DashboardSummary = {
   totalCompleted: number;
   completedLast7Days: number;
@@ -31,7 +25,6 @@ export type DailyMetric = {
 
 export type DashboardData = {
   summary: DashboardSummary;
-  daily: DailyMetric[];
 };
 
 export type ResponsiveBreakpoint = {
@@ -102,41 +95,21 @@ function toSummary(row: SummaryRow | null | undefined): DashboardSummary {
   };
 }
 
-function toDailyMetrics(rows: DailyRow[] | null | undefined): DailyMetric[] {
-  if (!rows) {
-    return [];
-  }
-  return rows.map((row) => ({
-    bucketDate: row.bucket_date,
-    completedCount: row.completed_count ?? 0,
-    updatedAt: row.updated_at,
-  }));
-}
-
 export const loadDashboardData = cache(async function loadDashboardData(
   userId: string
 ): Promise<DashboardData> {
   noStore();
   const supabase = await createSupabaseServerClient();
 
-  const [summaryResult, dailyResult] = await Promise.all([
-    supabase
-      .from("task_dashboard_metrics")
-      .select(
-        "total_completed, completed_last_7_days, completed_today, most_recent_completion_date"
-      )
-      .eq("user_id", userId)
-      .maybeSingle(),
-    supabase
-      .from("task_completion_metrics")
-      .select("bucket_date, completed_count, updated_at")
-      .eq("user_id", userId)
-      .order("bucket_date", { ascending: false })
-      .limit(DEFAULT_DAILY_METRIC_LIMIT),
-  ]);
+  const summaryResult = await supabase
+    .from("task_dashboard_metrics")
+    .select(
+      "total_completed, completed_last_7_days, completed_today, most_recent_completion_date"
+    )
+    .eq("user_id", userId)
+    .maybeSingle();
 
   const summary = toSummary(summaryResult.data);
-  const daily = limitDailyMetrics(toDailyMetrics(dailyResult.data));
 
-  return { summary, daily };
+  return { summary };
 });

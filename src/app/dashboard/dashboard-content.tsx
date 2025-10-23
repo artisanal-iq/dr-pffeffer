@@ -1,12 +1,11 @@
+import { Suspense } from "react";
 import Link from "next/link";
 
+import { ConsistencyHeatmapCard } from "@/components/dashboard/consistency-heatmap";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
-  DEFAULT_DAILY_METRIC_LIMIT,
   DashboardData,
-  DailyMetric,
   describeResponsiveColumns,
   loadDashboardData,
   METRIC_GRID_BREAKPOINTS,
@@ -65,23 +64,6 @@ function createSummaryCards(data: DashboardData["summary"]): SummaryCard[] {
   ];
 }
 
-function buildHeatmapCells(metrics: DailyMetric[]) {
-  const sorted = [...metrics].sort((a, b) =>
-    new Date(a.bucketDate).getTime() - new Date(b.bucketDate).getTime()
-  );
-  const maxValue = sorted.reduce(
-    (max, item) => Math.max(max, item.completedCount),
-    0
-  );
-  return sorted.map((item) => {
-    const ratio = maxValue > 0 ? item.completedCount / maxValue : 0;
-    return {
-      ...item,
-      intensity: Math.max(0.15, Math.min(ratio || 0, 1)),
-    };
-  });
-}
-
 type DashboardContentProps = {
   userId: string;
 };
@@ -89,7 +71,6 @@ type DashboardContentProps = {
 export default async function DashboardContent({ userId }: DashboardContentProps) {
   const data = await loadDashboardData(userId);
   const cards = createSummaryCards(data.summary);
-  const heatmapCells = buildHeatmapCells(data.daily);
 
   const responsiveDescription = describeResponsiveColumns(METRIC_GRID_BREAKPOINTS);
 
@@ -126,47 +107,9 @@ export default async function DashboardContent({ userId }: DashboardContentProps
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader className="flex flex-col gap-1 border-b border-black/5 pb-4 dark:border-white/10">
-            <CardTitle className="text-base font-semibold">Consistency heatmap</CardTitle>
-            <CardDescription>
-              Activity from the last {Math.min(data.daily.length, DEFAULT_DAILY_METRIC_LIMIT)} days
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            {heatmapCells.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Complete tasks in the planner to populate your heatmap.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
-                  {heatmapCells.map((cell) => (
-                    <span
-                      key={cell.bucketDate}
-                      className={cn(
-                        "h-8 rounded-md bg-blue-500/80 transition-all dark:bg-blue-400/80",
-                        cell.completedCount === 0 && "bg-muted"
-                      )}
-                      aria-label={`${cell.completedCount} task${
-                        cell.completedCount === 1 ? "" : "s"
-                      } completed on ${new Date(
-                        cell.bucketDate
-                      ).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}`}
-                      style={{ opacity: cell.completedCount === 0 ? 1 : cell.intensity }}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Darker blocks represent days with more completed tasks.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Suspense fallback={<ConsistencyHeatmapCardSkeleton />}>
+          <ConsistencyHeatmapCard />
+        </Suspense>
 
         <Card className="flex flex-col">
           <CardHeader className="border-b border-black/5 pb-4 dark:border-white/10">
@@ -201,6 +144,44 @@ export default async function DashboardContent({ userId }: DashboardContentProps
         </Card>
       </section>
     </div>
+  );
+}
+
+function ConsistencyHeatmapCardSkeleton() {
+  return (
+    <Card aria-labelledby="consistency-heatmap-title" aria-busy="true">
+      <CardHeader className="flex flex-col gap-1 border-b border-black/5 pb-4 dark:border-white/10">
+        <CardTitle id="consistency-heatmap-title" className="text-base font-semibold">
+          Consistency heatmap
+        </CardTitle>
+        <CardDescription>Loading recent activity…</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6 pt-6">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="space-y-2">
+              <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-6 w-16 animate-pulse rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+        <div className="flex items-start gap-3">
+          <div className="grid select-none grid-rows-7 gap-1 text-xs text-muted-foreground">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label) => (
+              <span key={label} className="h-6 leading-6">
+                {label}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-6 gap-1 sm:gap-1.5" aria-hidden>
+            {Array.from({ length: 42 }).map((_, index) => (
+              <span key={index} className="h-6 w-6 animate-pulse rounded-sm bg-muted" />
+            ))}
+          </div>
+        </div>
+        <div className="h-3 w-40 animate-pulse rounded bg-muted" aria-hidden />
+      </CardContent>
+    </Card>
   );
 }
 
