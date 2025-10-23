@@ -699,6 +699,8 @@ grant execute on function public.log_settings_change(uuid, jsonb) to anon, authe
  declare t text;
  begin
  for t in select unnest(array['tasks','power_practices','journals','connections','settings']) loop
+    -- Ensure idempotency when re-running schema: drop existing trigger before creating
+    execute format('drop trigger if exists %I on public.%I;', t || '_set_updated_at', t);
     execute format('create trigger %I before update on public.%I for each row execute function public.set_updated_at();', t || '_set_updated_at', t);
   end loop;
  end $$;
