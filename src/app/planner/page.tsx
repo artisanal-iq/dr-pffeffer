@@ -1,7 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import TaskList from "@/components/tasks/task-list";
-import { Card, CardContent } from "@/components/ui/card";
-import { PlannerClient } from "./planner-client";
+import { PlannerWorkspace } from "@/components/planner/planner-workspace";
 
 export default async function PlannerPage() {
   await requireUser("/planner");
@@ -13,14 +11,7 @@ export default async function PlannerPage() {
           Tasks, manual scheduling, and (later) auto-plan controls.
         </p>
       </header>
-      <div className="grid gap-8 xl:grid-cols-[minmax(320px,380px)_1fr]">
-        <TaskList />
-        <Card className="h-full">
-          <CardContent className="p-6">
-            <PlannerClient />
-          </CardContent>
-        </Card>
-      </div>
+      <PlannerWorkspace />
     </main>
   );
 }

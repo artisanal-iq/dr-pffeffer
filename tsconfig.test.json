@@ -10,7 +10,8 @@
     "allowJs": false,
     "isolatedModules": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@testing-library/react": ["./tests/testing-library-react"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts"],
