@@ -53,6 +53,9 @@ export type TaskDashboardMetric = {
   completed_last_7_days: number;
   completed_today: number;
   most_recent_completion_date: string | null;
+  daily_check_ins_last_7_days: number;
+  last_check_in_at: string | null;
+  auto_plan_percentage_last_7_days: number;
 }
 
 export type JournalSummaryMetadata = {

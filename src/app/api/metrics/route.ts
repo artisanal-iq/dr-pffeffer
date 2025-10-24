@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("task_dashboard_metrics")
     .select(
-      "user_id, total_completed, completed_last_7_days, completed_today, most_recent_completion_date"
+      "user_id, total_completed, completed_last_7_days, completed_today, most_recent_completion_date, daily_check_ins_last_7_days, last_check_in_at, auto_plan_percentage_last_7_days"
     )
     .eq("user_id", user.id)
     .maybeSingle();
@@ -39,6 +39,11 @@ export async function GET(req: NextRequest) {
     completed_last_7_days: data?.completed_last_7_days ?? 0,
     completed_today: data?.completed_today ?? 0,
     most_recent_completion_date: data?.most_recent_completion_date ?? null,
+    daily_check_ins_last_7_days: data?.daily_check_ins_last_7_days ?? 0,
+    last_check_in_at: data?.last_check_in_at ?? null,
+    auto_plan_percentage_last_7_days: data?.auto_plan_percentage_last_7_days
+      ? Number(data.auto_plan_percentage_last_7_days)
+      : 0,
   };
 
   if (detail !== "daily") {
