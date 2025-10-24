@@ -10,15 +10,15 @@ The roadmap translates the PRD into a four-quarter plan that balances foundation
 - Launch core workspace enabling users to capture tasks, daily power practices, journals, and relationships.
 - Deliver baseline dashboard summarizing activity and power score prototype.
 
-**Capabilities & Complexity**
-| Capability | Description | Complexity |
-| --- | --- | --- |
-| Task + Planner CRUD | Tasks with contexts, priorities, list-based scheduling, Supabase sync. Calendar UI pending. | M |
-| Power Practice Routine | Morning focus prompt selection, midday nudges (manual scheduler), end-of-day rating capture. | M |
-| Influence Journal | Text entry capture for journals (speech-to-text deferred to future milestone), AI summary placeholder (rule-based). | S |
-| Relationship Tracker | Contact management with reminders, basic tagging. | M |
-| Dashboard Foundations | Power score calculation (rule-based), calendar heatmap, quick navigation links to creation flows (inline quick-add deferred). | M |
-| Auth & Settings | Supabase Auth, profile settings, notification preferences. | S |
+**Capabilities, Status & Complexity**
+| Capability | Description | Status | Complexity | Blockers |
+| --- | --- | --- | --- | --- |
+| Task + Planner CRUD | Tasks with contexts, priorities, list-based scheduling, Supabase sync. Calendar UI pending. | Done | M | — |
+| Power Practice Routine | Morning focus prompt selection, midday nudges (manual scheduler), end-of-day rating capture. | Blocked | M | Shared user profile and settings service not available. |
+| Influence Journal | Text entry capture for journals (speech-to-text deferred to future milestone), AI summary placeholder (rule-based). | Blocked | S | Shared user profile and settings service not available. |
+| Relationship Tracker | Contact management with reminders, basic tagging. | Blocked | M | Shared user profile and settings service not available. |
+| Dashboard Foundations | Power score calculation (rule-based), calendar heatmap, quick navigation links to creation flows (inline quick-add deferred). | Blocked | M | Dashboard metrics depend on task, practice, and journal data pipelines. |
+| Auth & Settings | Supabase Auth, profile settings, notification preferences. | Not Started | S | Shared user profile and settings service work pending. |
 
 **Dependencies**
 - Shared user profile and settings service required before routine, journal, and tracker modules.
