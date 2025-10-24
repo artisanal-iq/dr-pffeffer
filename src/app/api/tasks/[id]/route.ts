@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
-const updateTaskSchema = z.object({
-  title: z.string().min(1).max(200).optional(),
-  status: z.enum(["todo", "in_progress", "done"]).optional(),
-  priority: z.enum(["low", "medium", "high"]).optional(),
-  scheduledTime: z.string().datetime().nullable().optional(),
-  durationMinutes: z.number().int().min(15).max(24 * 60).optional(),
-  context: z.string().nullable().optional(),
-});
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+import { taskUpdateSchema } from "@/lib/validation/tasks";
+import type { Task } from "@/types/models";
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+function createResponder(applyCookies: (response: NextResponse) => NextResponse) {
+  return <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
+}
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
-  const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
+  const respond = createResponder(applyCookies);
 
   const {
     data: { user },
@@ -34,7 +33,7 @@ export async function GET(
     .select("*")
     .eq("user_id", user.id)
     .eq("id", params.id)
-    .single();
+    .single<Task>();
 
   if (error) {
     if (error.code === "PGRST116") {
@@ -51,11 +50,11 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
-  const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
+  const respond = createResponder(applyCookies);
 
   const {
     data: { user },
@@ -68,7 +67,7 @@ export async function PATCH(
   }
 
   const body = await req.json().catch(() => null);
-  const parsed = updateTaskSchema.safeParse(body);
+  const parsed = taskUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return respond(
       { error: { code: "invalid_body", message: parsed.error.message } },
@@ -76,14 +75,21 @@ export async function PATCH(
     );
   }
 
-  const payload = parsed.data;
+  const {
+    title,
+    status,
+    priority,
+    scheduledTime,
+    durationMinutes,
+    context: contextPatch,
+  } = parsed.data;
   const updates: Record<string, unknown> = {};
-  if (payload.title !== undefined) updates.title = payload.title;
-  if (payload.status !== undefined) updates.status = payload.status;
-  if (payload.priority !== undefined) updates.priority = payload.priority;
-  if (payload.context !== undefined) updates.context = payload.context;
-  if (payload.scheduledTime !== undefined) updates.scheduled_time = payload.scheduledTime;
-  if (payload.durationMinutes !== undefined) updates.duration_minutes = payload.durationMinutes;
+  if (title !== undefined) updates.title = title;
+  if (status !== undefined) updates.status = status;
+  if (priority !== undefined) updates.priority = priority;
+  if (contextPatch !== undefined) updates.context = contextPatch;
+  if (scheduledTime !== undefined) updates.scheduled_time = scheduledTime;
+  if (durationMinutes !== undefined) updates.duration_minutes = durationMinutes;
   if (Object.keys(updates).length === 0) {
     return respond(
       { error: { code: "empty_patch", message: "No valid fields provided" } },
@@ -98,7 +104,46 @@ export async function PATCH(
     .eq("user_id", user.id)
     .eq("id", params.id)
     .select()
-    .single();
+    .single<Task>();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return respond(
+        { error: { code: "not_found", message: "Task not found" } },
+        { status: 404 }
+      );
+    }
+    return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
+  }
+
+  return respond(data);
+}
+
+export async function DELETE(
+  req: NextRequest,
+  context: RouteContext
+) {
+  const params = await context.params;
+  const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
+  const respond = createResponder(applyCookies);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return respond(
+      { error: { code: "unauthorized", message: "Not authenticated" } },
+      { status: 401 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("id", params.id)
+    .select()
+    .single<Task>();
 
   if (error) {
     if (error.code === "PGRST116") {
