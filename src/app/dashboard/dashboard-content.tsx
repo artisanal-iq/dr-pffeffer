@@ -18,9 +18,16 @@ function formatNumber(value: number) {
   }).format(value);
 }
 
-function formatDateLabel(isoDate: string | null) {
+function formatPercent(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "percent",
+    maximumFractionDigits: 0,
+  }).format(value / 100);
+}
+
+function formatDateLabel(isoDate: string | null, fallback = "No completions logged yet") {
   if (!isoDate) {
-    return "No completions logged yet";
+    return fallback;
   }
   const date = new Date(isoDate);
   return new Intl.DateTimeFormat("en-US", {
@@ -61,6 +68,24 @@ function createSummaryCards(data: DashboardData["summary"]): SummaryCard[] {
       title: "Most recent win",
       value: formatDateLabel(data.mostRecentCompletionDate),
       description: "Most recent task completion",
+    },
+    {
+      id: "daily-check-ins",
+      title: "Daily check-ins",
+      value: formatNumber(data.dailyCheckInsLast7Days),
+      description: "Completed routines over the last 7 days",
+    },
+    {
+      id: "auto-plan-rate",
+      title: "Auto-plan rate",
+      value: formatPercent(data.autoPlanPercentageLast7Days),
+      description: "Share of tasks auto-planned in the last 7 days",
+    },
+    {
+      id: "last-check-in",
+      title: "Last check-in",
+      value: formatDateLabel(data.lastCheckInAt, "No check-ins logged yet"),
+      description: "Most recent daily routine completion",
     },
   ];
 }

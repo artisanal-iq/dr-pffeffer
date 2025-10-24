@@ -8,6 +8,9 @@ type SummaryRow = {
   completed_last_7_days: number | null;
   completed_today: number | null;
   most_recent_completion_date: string | null;
+  daily_check_ins_last_7_days: number | null;
+  last_check_in_at: string | null;
+  auto_plan_percentage_last_7_days: number | string | null;
 };
 
 export type DashboardSummary = {
@@ -15,6 +18,9 @@ export type DashboardSummary = {
   completedLast7Days: number;
   completedToday: number;
   mostRecentCompletionDate: string | null;
+  dailyCheckInsLast7Days: number;
+  lastCheckInAt: string | null;
+  autoPlanPercentageLast7Days: number;
 };
 
 export type DailyMetric = {
@@ -92,6 +98,11 @@ function toSummary(row: SummaryRow | null | undefined): DashboardSummary {
     completedLast7Days: row?.completed_last_7_days ?? 0,
     completedToday: row?.completed_today ?? 0,
     mostRecentCompletionDate: row?.most_recent_completion_date ?? null,
+    dailyCheckInsLast7Days: row?.daily_check_ins_last_7_days ?? 0,
+    lastCheckInAt: row?.last_check_in_at ?? null,
+    autoPlanPercentageLast7Days: row?.auto_plan_percentage_last_7_days
+      ? Number(row.auto_plan_percentage_last_7_days)
+      : 0,
   };
 }
 
@@ -104,7 +115,7 @@ export const loadDashboardData = cache(async function loadDashboardData(
   const summaryResult = await supabase
     .from("task_dashboard_metrics")
     .select(
-      "total_completed, completed_last_7_days, completed_today, most_recent_completion_date"
+      "total_completed, completed_last_7_days, completed_today, most_recent_completion_date, daily_check_ins_last_7_days, last_check_in_at, auto_plan_percentage_last_7_days"
     )
     .eq("user_id", userId)
     .maybeSingle();

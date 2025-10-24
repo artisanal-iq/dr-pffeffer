@@ -120,15 +120,95 @@ $$;
  );
  create index if not exists task_completion_metrics_bucket_date_idx on public.task_completion_metrics (bucket_date);
 
-create or replace view public.task_dashboard_metrics as
+create table if not exists public.workflow_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null,
+  event_type text not null,
+  occurred_at timestamptz not null default now(),
+  metadata jsonb not null default '{}'::jsonb
+);
+
+create index if not exists workflow_events_user_id_idx on public.workflow_events (user_id);
+create index if not exists workflow_events_event_type_idx on public.workflow_events (event_type);
+create index if not exists workflow_events_occurred_at_idx on public.workflow_events (occurred_at);
+
+drop view if exists public.workflow_event_kpi_metrics;
+drop materialized view if exists public.workflow_event_kpi_metrics;
+
+create materialized view public.workflow_event_kpi_metrics as
+with events as (
+  select
+    user_id,
+    event_type,
+    occurred_at,
+    metadata
+  from public.workflow_events
+),
+check_ins as (
+  select
+    user_id,
+    count(*) filter (
+      where event_type = 'workflow.daily_routine.completed'
+        and occurred_at >= date_trunc('day', now()) - interval '6 day'
+    ) as daily_check_ins_last_7_days,
+    max(case when event_type = 'workflow.daily_routine.completed' then occurred_at end) as last_check_in_at
+  from events
+  group by user_id
+),
+task_creation as (
+  select
+    user_id,
+    count(*) filter (
+      where event_type = 'workflow.task.created'
+        and occurred_at >= date_trunc('day', now()) - interval '6 day'
+    ) as tasks_created_last_7_days,
+    count(*) filter (
+      where event_type = 'workflow.task.created'
+        and metadata ->> 'auto_planned' = 'true'
+        and occurred_at >= date_trunc('day', now()) - interval '6 day'
+    ) as auto_planned_last_7_days
+  from events
+  group by user_id
+)
 select
-  m.user_id,
-  coalesce(sum(m.completed_count), 0) as total_completed,
-  coalesce(sum(m.completed_count) filter (where m.bucket_date >= current_date - interval '6 day'), 0) as completed_last_7_days,
-  coalesce(sum(m.completed_count) filter (where m.bucket_date = current_date), 0) as completed_today,
-  max(m.bucket_date) as most_recent_completion_date
-from public.task_completion_metrics m
-group by m.user_id;
+  coalesce(c.user_id, t.user_id) as user_id,
+  coalesce(c.daily_check_ins_last_7_days, 0) as daily_check_ins_last_7_days,
+  c.last_check_in_at,
+  coalesce(t.auto_planned_last_7_days, 0) as auto_planned_last_7_days,
+  coalesce(t.tasks_created_last_7_days, 0) as tasks_created_last_7_days,
+  case
+    when coalesce(t.tasks_created_last_7_days, 0) > 0 then
+      round(t.auto_planned_last_7_days::numeric / nullif(t.tasks_created_last_7_days, 0) * 100, 2)
+    else 0
+  end as auto_plan_percentage_last_7_days
+from check_ins c
+full outer join task_creation t on c.user_id = t.user_id;
+
+create unique index if not exists workflow_event_kpi_metrics_user_id_idx
+  on public.workflow_event_kpi_metrics (user_id);
+
+create or replace view public.task_dashboard_metrics as
+with task_metrics as (
+  select
+    m.user_id,
+    coalesce(sum(m.completed_count), 0) as total_completed,
+    coalesce(sum(m.completed_count) filter (where m.bucket_date >= current_date - interval '6 day'), 0) as completed_last_7_days,
+    coalesce(sum(m.completed_count) filter (where m.bucket_date = current_date), 0) as completed_today,
+    max(m.bucket_date) as most_recent_completion_date
+  from public.task_completion_metrics m
+  group by m.user_id
+)
+select
+  coalesce(t.user_id, k.user_id) as user_id,
+  coalesce(t.total_completed, 0) as total_completed,
+  coalesce(t.completed_last_7_days, 0) as completed_last_7_days,
+  coalesce(t.completed_today, 0) as completed_today,
+  t.most_recent_completion_date,
+  coalesce(k.daily_check_ins_last_7_days, 0) as daily_check_ins_last_7_days,
+  k.last_check_in_at,
+  coalesce(k.auto_plan_percentage_last_7_days, 0) as auto_plan_percentage_last_7_days
+from task_metrics t
+full outer join public.workflow_event_kpi_metrics k on t.user_id = k.user_id;
 
 -- Reflection metrics
 create or replace view public.reflection_dashboard_metrics as
