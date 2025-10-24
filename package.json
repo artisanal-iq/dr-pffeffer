@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:unit": "vitest run",
+    "test:smoke": "vitest run tests/smoke",
     "test:e2e": "playwright test",
     "postinstall": "node scripts/postinstall.mjs"
   },
