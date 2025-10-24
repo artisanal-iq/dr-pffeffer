@@ -1,0 +1,46 @@
+name: Weekly release review
+
+on:
+  schedule:
+    - cron: "0 15 * * MON"
+  workflow_dispatch:
+
+jobs:
+  open-review-issue:
+    name: Open review issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or reuse the weekly review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const now = new Date();
+            const isoDate = now.toISOString().slice(0, 10);
+            const title = `Weekly release review (${isoDate})`;
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              per_page: 100,
+            });
+
+            if (issues.some((issue) => issue.title === title)) {
+              core.info(`An open issue titled "${title}" already exists.`);
+              return;
+            }
+
+            const body = `## Weekly release review\n\n` +
+              `1. Re-run the PR checklist in docs/PR_DEPLOY_CHECKLIST.md for every deployment shipped last week.\n` +
+              `2. Confirm the Build, Smoke tests, and Environment variables review gates succeeded for each release.\n` +
+              `3. Log any gaps and assign rollback or hotfix owners.\n` +
+              `4. Capture follow-up tasks (bug fixes, postmortems, or automation) before closing this issue.\n`;
+
+            await github.rest.issues.create({
+              owner,
+              repo,
+              title,
+              body,
+            });
+            core.info(`Opened review issue "${title}".`);
