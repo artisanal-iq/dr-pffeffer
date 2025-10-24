@@ -239,7 +239,7 @@ export default function TaskList() {
   const showEmpty = !isLoading && !isError && filteredTasks.length === 0;
 
   return (
-    <Card className="mt-8" role="region" aria-label="Daily routine tasks">
+    <Card role="region" aria-label="Daily routine tasks">
       <CardHeader>
         <CardTitle>Tasks</CardTitle>
         <CardDescription>Review and filter your upcoming work.</CardDescription>
