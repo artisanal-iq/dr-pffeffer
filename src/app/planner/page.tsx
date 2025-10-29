@@ -1,6 +1,10 @@
 import { requireUser } from "@/lib/auth";
 import { PlannerWorkspace } from "@/components/planner/planner-workspace";
 
+// Ensure this page always renders dynamically in production to avoid any
+// caching or RSC streaming edge cases that could hide client content.
+export const dynamic = "force-dynamic";
+
 export default async function PlannerPage() {
   await requireUser("/planner");
   return (
