@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
+
+type RouteContext = { params: Promise<{ promptId: string }> };
+
 import { isAdminUser } from "@/lib/rbac";
 import { promptIdParamSchema, promptUpdateSchema } from "@/lib/validation/prompts";
 
@@ -23,9 +26,9 @@ function respondError(applyCookies: ApplyCookies, code: string, message: string,
 
 export async function GET(
   req: NextRequest,
-  context: { params: { promptId: string } },
+  context: RouteContext,
 ) {
-  const params = context.params;
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
@@ -60,9 +63,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { promptId: string } },
+  context: RouteContext,
 ) {
-  const params = context.params;
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },
@@ -116,9 +119,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { promptId: string } },
+  context: RouteContext,
 ) {
-  const params = context.params;
+  const params = await context.params;
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const {
     data: { user },

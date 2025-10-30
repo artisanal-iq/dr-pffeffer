@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+
+type RouteContext = { params: Promise<{ id: string }> };
 import { z } from "zod";
 import { decryptJournalRow, encryptString } from "@/lib/encryption";
 import { tagSchema } from "@/lib/journal-schemas";
@@ -23,14 +25,14 @@ const patchSchema = z.object({
   tags: z.array(tagSchema).max(12).optional(),
 });
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: RouteContext) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
-  const { id } = context.params;
+  const { id } = await context.params;
   const { data, error } = await supabase
     .from("journals")
     .select("*")
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
   }
 }
 
-export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: RouteContext) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
@@ -57,7 +59,7 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
   const body = await req.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return respond({ error: { code: "invalid_body", message: parsed.error.message } }, { status: 400 });
-  const { id } = context.params;
+  const { id } = await context.params;
   try {
     const patch: Record<string, unknown> = {};
     if (parsed.data.entry !== undefined) {
@@ -89,14 +91,14 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
   }
 }
 
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: RouteContext) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return respond({ error: { code: "unauthorized", message: "Not authenticated" } }, { status: 401 });
-  const { id } = context.params;
+  const { id } = await context.params;
   const { error } = await supabase.from("journals").delete().eq("user_id", user.id).eq("id", id);
   if (error) return respond({ error: { code: "db_error", message: error.message } }, { status: 500 });
   return respond({ ok: true });
