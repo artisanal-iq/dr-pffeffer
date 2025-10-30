@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { useForm, type FieldValues, type Path, type UseFormReturn } from "react-hook-form";
+import {
+  useForm,
+  type FieldValues,
+  type Path,
+  type UseFormReturn,
+  type DefaultValues as RHFDefaultValues,
+} from "react-hook-form";
 import type { ZodSchema } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +18,7 @@ import {
   type ModalSubmitResult,
 } from "./create-entity-modal-controller";
 
-type DefaultValues<T> = T | (() => T);
+type InitialValueSource<T> = T | (() => T);
 
 type CreateEntityModalProps<TFormValues extends FieldValues> = {
   title: string;
@@ -20,13 +26,13 @@ type CreateEntityModalProps<TFormValues extends FieldValues> = {
   triggerLabel: string;
   submitLabel?: string;
   description?: string;
-  defaultValues: DefaultValues<TFormValues>;
+  defaultValues: InitialValueSource<TFormValues>;
   schema: ZodSchema<TFormValues>;
   onCreate: (values: TFormValues) => Promise<unknown>;
-  renderFields: (form: UseFormReturn<TFormValues>) => ReactNode;
+  renderFields: (form: UseFormReturn<TFormValues, unknown, TFormValues>) => ReactNode;
 };
 
-function resolveDefaultValues<TFormValues>(source: DefaultValues<TFormValues>): TFormValues {
+function resolveDefaultValues<TFormValues>(source: InitialValueSource<TFormValues>): TFormValues {
   return typeof source === "function" ? (source as () => TFormValues)() : source;
 }
 
@@ -44,7 +50,7 @@ export function CreateEntityModal<TFormValues extends FieldValues>({
   const computeDefaultValues = useCallback(() => resolveDefaultValues(defaultValues), [defaultValues]);
   const initialDefaults = useMemo(() => computeDefaultValues(), [computeDefaultValues]);
   const form = useForm<TFormValues>({
-    defaultValues: initialDefaults,
+    defaultValues: initialDefaults as RHFDefaultValues<TFormValues>,
   });
   const [open, setOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -108,7 +114,7 @@ export function CreateEntityModal<TFormValues extends FieldValues>({
 
 function applySubmitResult<TFormValues extends FieldValues>(
   result: ModalSubmitResult<TFormValues>,
-  form: UseFormReturn<TFormValues>,
+  form: UseFormReturn<TFormValues, unknown, TFormValues>,
   setOpen: (open: boolean) => void,
   setServerError: (message: string | null) => void
 ) {

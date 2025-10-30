@@ -1,7 +1,7 @@
 "use client";
 
 import { Monitor, Moon, Sun } from "lucide-react";
-import { useTransition } from "react";
+import { useTransition, type JSX } from "react";
 
 import { useThemeSettings, type ThemeName } from "@/context/theme-context";
 import { cn } from "@/lib/utils";

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateRuleBasedSummary, SummaryGenerationError } from "@/lib/journal-summary";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase-server";
 
-export async function POST(req: NextRequest, context: { params: { id: string } }) {
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function POST(req: NextRequest, context: RouteContext) {
   const { supabase, applyCookies } = await createSupabaseRouteHandlerClient(req);
   const respond = <T>(body: T, init?: ResponseInit) => applyCookies(NextResponse.json(body, init));
   const {

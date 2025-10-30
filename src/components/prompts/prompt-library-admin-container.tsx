@@ -9,7 +9,7 @@ class PromptLibraryAdminErrorBoundary extends Component<
   { children: ReactNode; onReset: () => void },
   { error: Error | null }
 > {
-  state = { error: null };
+  state: { error: Error | null } = { error: null };
 
   static getDerivedStateFromError(error: Error) {
     return { error };
@@ -32,7 +32,7 @@ class PromptLibraryAdminErrorBoundary extends Component<
         <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
           <p>We couldn&apos;t load the prompt library right now.</p>
           <p className="text-xs text-muted-foreground">
-            {this.state.error.message ?? "An unexpected error occurred."}
+            {this.state.error?.message ?? "An unexpected error occurred."}
           </p>
           <Button onClick={this.handleReset} size="sm" variant="secondary">
             Try again
