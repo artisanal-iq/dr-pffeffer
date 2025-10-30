@@ -6,6 +6,7 @@ import { TaskOperationsProvider } from "@/context/tasks-context";
 
 import { PlannerClient } from "@/app/planner/planner-client";
 import { GtdProjectLists } from "./project-lists";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 
 export function PlannerWorkspace() {
   return (
@@ -19,7 +20,9 @@ export function PlannerWorkspace() {
             <PlannerClient />
           </CardContent>
         </Card>
-        <GtdProjectLists />
+        <ErrorBoundary>
+          <GtdProjectLists />
+        </ErrorBoundary>
       </div>
     </TaskOperationsProvider>
   );

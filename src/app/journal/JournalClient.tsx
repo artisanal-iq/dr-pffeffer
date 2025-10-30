@@ -1,6 +1,18 @@
 "use client";
-import { useState } from "react";
 import { useCreateJournal, useDeleteJournal, useJournals, useSummarizeJournal } from "@/hooks/journals";
+
+import { z } from "zod";
+import { CreateEntityModal } from "@/components/modals/create-entity-modal";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+const createJournalSchema = z.object({
+  date: z.string().min(1, "Please pick a date"),
+  entry: z.string().min(1, "Entry cannot be empty"),
+});
+
+type CreateJournalValues = z.infer<typeof createJournalSchema>;
+
 import type { JournalSummaryMetadata } from "@/types/models";
 
 export default function JournalClient() {
