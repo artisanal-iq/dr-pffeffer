@@ -12,18 +12,14 @@ export function PlannerWorkspace() {
   return (
     <TaskOperationsProvider>
       <div className="grid gap-8 xl:grid-cols-[minmax(280px,340px)_minmax(420px,1fr)_minmax(280px,340px)]">
-        <ErrorBoundary>
-          <div className="space-y-4">
-            <TaskList />
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary>
-          <Card className="h-full">
-            <CardContent className="p-6">
-              <PlannerClient />
-            </CardContent>
-          </Card>
-        </ErrorBoundary>
+        <div className="space-y-4">
+          <TaskList />
+        </div>
+        <Card className="h-full">
+          <CardContent className="p-6">
+            <PlannerClient />
+          </CardContent>
+        </Card>
         <ErrorBoundary>
           <GtdProjectLists />
         </ErrorBoundary>
