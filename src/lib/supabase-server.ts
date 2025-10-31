@@ -21,23 +21,30 @@ type CookieOptions = Partial<{
 type PendingCookie = { name: string; value: string; options?: CookieOptions };
 
 export async function createSupabaseServerClient() {
-  const cookieStore = await cookies();
+  // In tests or scripts there may be no Next.js request context.
+  // Calling cookies() in that case throws; fall back to a no-op cookie adapter.
+  let cookieStore;
+  try {
+    cookieStore = await cookies();
+  } catch {
+    cookieStore = null;
+  }
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       get(name) {
-        return cookieStore.get(name)?.value;
+        return cookieStore?.get(name)?.value;
       },
       set(name, value, options) {
         try {
           // In server components the cookie store is read-only; swallow errors in that case.
-          cookieStore.set({ name, value, ...options });
+          cookieStore?.set({ name, value, ...options });
         } catch {
           // no-op
         }
       },
       remove(name, options) {
         try {
-          cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+          cookieStore?.set({ name, value: "", ...options, maxAge: 0 });
         } catch {
           // no-op
         }
